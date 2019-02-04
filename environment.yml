@@ -1,0 +1,15 @@
+name: rmed_toolbox_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=2.7
+  - image-meta-tag
+  - pandas
+  - iris=1.13.0
+  - basemap
+  - scipy
+  - sqlalchemy
+  - agg-regrid
+  - docutils
+  - netcdf4=1.3.1
