@@ -5,3 +5,10 @@ NCL scripts, which produce Hovmoller plots of the three-dimensional wind on mode
 # TO DO
 
 Run and save output for comparison
+* alter output
+
+## Requirements:
+
+* `module load ncl/6.5.0/1/default`
+* access to sam's user functions
+* access to data

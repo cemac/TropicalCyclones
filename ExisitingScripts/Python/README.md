@@ -4,4 +4,11 @@ John Ashcroft [(windspeed_stamp.py)](windspeed_stamp.py) and Will Torgerson [(ol
 
 ## TO DO
 
-Run scripts and save output for later
+Run scripts and save output for later:
+* Olr_stamp:
+  * custom_cmap not included
+  * need to swap pickles to run
+* windspeed_stamp:
+  * Runs in python environment
+  * altered output location
+  * VERY slow 
