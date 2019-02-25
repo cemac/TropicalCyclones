@@ -1,6 +1,6 @@
-; Script to produce Hovmoller plots of three-dimensional windspeed 
+; Script to produce Hovmoller plots of three-dimensional windspeed
 
-; Run using 
+; Run using
 
 ; ncl dat=\"02T12\" opt=\"x11\" ens0=\"em11\" dist=3.0 ts=42 tf=86 mlev0=13 rmw=1 calc=1
 ; tclr=2 rclr=2 wclr=1 lay=1 mlev1=24 ar=1.5 nr=31 ar0=1.5 cn0=\"geo_sm\" tc_hov_uv.ncl
@@ -28,6 +28,25 @@
 ; 'centre'    --> 'it-1'
 ; 'pd' stream --> 'it-2'
 
+dat         = "02T12"
+opt         = "pdf"
+ens0        = "em11"
+dist        = 3.0
+ts          = 42
+tf          = 86
+mlev0       = 13
+rmw         = 1
+calc        = 1
+tclr        = 2
+rclr        = 2
+wclr        = 1
+lay         = 1
+mlev1       = 24
+ar          = 1.5
+nr          = 31
+ar0         = 1.5
+cn0         = "geo_sm"
+
 ; Load main NCL libraries ($NCARG_ROOT = /apps/applications/ncl/6.5.0/1/default)
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
@@ -35,7 +54,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRF_contributed.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
 load "/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/gsn_csm.ncl"
 
-; Also load additional user-written functions 
+; Also load additional user-written functions
 load "/nfs/a37/earshar/ncl_func/st_rm.ncl"
 load "/nfs/a37/earshar/ncl_func/nc_times.ncl"
 load "/nfs/a37/earshar/ncl_func/nc_levs.ncl"
@@ -43,7 +62,7 @@ load "/nfs/a37/earshar/ncl_func/nc_levs.ncl"
 begin
 
 ;=================
-; Read in files 
+; Read in files
 ;=================
 
 ; Find 'pb' stream data to read in and plot
@@ -86,9 +105,9 @@ begin
     "wsMaximumSize" : 10000000000
   end setvalues
 
-;=======================================                                                
-; Choose which storm track to read in                                                   
-;=======================================                                                
+;=======================================
+; Choose which storm track to read in
+;=======================================
 
   if (cn0 .eq. "slp") then
    cn = 0
@@ -206,7 +225,7 @@ begin
   vvel_azi@description  = "Azimuthally averaged vertical velocity"
   vvel_azi@units        = "m s~S~-1~N~"
 
-; Create time array for later plotting 
+; Create time array for later plotting
   time_int = new(numTIMES,"integer")
   time_int = ispan(0,119,1) ; ispan(ts,tf,1)
   time_int!0 = "time"
@@ -328,7 +347,7 @@ begin
   ; Read in temperature, pressure, theta, vertical velocity and geopotential height
   ; All variables below -- [hybD | 63] * [latD | 150] * [lon1D | 151]
 
-    if (lay .eq. 1) then 
+    if (lay .eq. 1) then
      t      = d->temp(it-2,mlev0:mlev1,{t0:t1},{n0:n1})        ; Temperature (K)
      p      = d->p(it-2,mlev0:mlev1,{t0:t1},{n0:n1})           ; Pressure (Pa)
      th     = d->theta(it-2,mlev0:mlev1,{t0:t1},{n0:n1})       ; Potential temperature (K)
@@ -342,7 +361,7 @@ begin
      w      = d->dz_dt(it-2,mlev0,{t0:t1},{n0:n1})             ; Vertical velocity (m s-1)
      z      = d->ht(it-2,mlev0,{t0:t1},{n0:n1})                ; Geopotential height (m)
      pv     = d->field83(it-2,mlev0,{t0:t1},{n0:n1})           ; Potential vorticity (PVU)
-    end if 
+    end if
 
   ; Convert units of pressure and geopotential height before continuing
     p  = p / 100           ; Convert to 'hPa'
@@ -378,21 +397,21 @@ begin
 ; Analyse variables on chosen model level
 ;===========================================
 
-    if (lay .eq. 1) then 
+    if (lay .eq. 1) then
      u_plane       = dim_avg_n_Wrap(u(:,:,:),0)
      v_plane       = dim_avg_n_Wrap(v(:,:,:),0)
      vort_plane    = dim_avg_n_Wrap(vort(:,:,:),0)
      prs_plane     = dim_avg_n_Wrap(p(:,:,:),0)
      pv_plane	   = dim_avg_n_Wrap(pv(:,:,:),0)
      w_plane	   = dim_avg_n_Wrap(w(:,:,:),0)
-    elseif (lay .eq. 0) then 
+    elseif (lay .eq. 0) then
      u_plane       = u(:,:)
      v_plane       = v(:,:)
      vort_plane    = vort(:,:)
      prs_plane     = p(:,:)
      pv_plane      = pv(:,:)
      w_plane       = w(:,:)
-    end if 
+    end if
 
   ; Max and min pressure on height level
     pmin           = toint(min(prs_plane))
@@ -453,18 +472,18 @@ begin
 
      end if
 
-   elseif (calc .eq. 1) then			; Find centre using offline script 
+   elseif (calc .eq. 1) then			; Find centre using offline script
 
      lat_max     = centre(cn,it-1,0)
      lon_max     = centre(cn,it-1,1)
-    
+
    elseif (calc .eq. 2) then			; Find centre using 980 m vorticity maximum
 
      lat_max     = t0 + (dy0 * inds0(0,0))
      lon_max     = n0 + (dx0 * inds0(0,1))
      print("Centre (980 m): "+lat_max+" degrees N, "+lon_max+" degrees E")
-    
-   end if 
+
+   end if
 
    ;==============================================================
    ; Create arrays for later switch to cylindrical coordinates
@@ -631,7 +650,7 @@ begin
       pv_int(:,iang)   = linint2_points(lon1D_sub,latD_sub,pv_plane,False,\
                                         xpos(:,iang),ypos(:,iang),0)
     end do
- 
+
   ; Calculate vector windspeed (from 'u' and 'v')
     spd_int = sqrt((u_int ^ 2) + (v_int ^ 2))
     copy_VarCoords(u_int,spd_int)
@@ -641,32 +660,32 @@ begin
   ; Calculate radial and tangential windspeed at each point
     do iang = 0, dimsizes(thetas)-1
       theta = thetas_rad(iang)
-        
+
 	ra = u_int(:,iang)*cos(theta)
 	rb = v_int(:,iang)*sin(theta)
 
 	ta = -u_int(:,iang)*sin(theta)
 	tb = v_int(:,iang)*cos(theta)
 
-        v_rad(:,iang) = ra + rb 
+        v_rad(:,iang) = ra + rb
         v_tan(:,iang) = ta + tb
 
     end do
 
   ;===================================================
-  ; Average variables azimuthally around the storm 
+  ; Average variables azimuthally around the storm
   ;===================================================
 
     do irad = 0, dimsizes(radii)-1
       r = radii(irad)
       vtan_azi(irad) = avg(v_tan(irad,:))        ; Tangential wind
-      vrad_azi(irad) = avg(v_rad(irad,:))	 ; Radial wind 
+      vrad_azi(irad) = avg(v_rad(irad,:))	 ; Radial wind
       spd_azi(irad)  = avg(spd_int(irad,:))	 ; Vector wind (for RMW)
       pvrt_azi(irad) = avg(pv_int(irad,:))	 ; Potential vorticity
       vvel_azi(irad) = avg(w_int(irad,:))	 ; Vertical velocity
     end do
 
-  ; Input azimuthal averages into larger arrays before plotting  
+  ; Input azimuthal averages into larger arrays before plotting
     vtan_plot0(:,it-1)  = vtan_azi(:)            ; Tangential wind
     vrad_plot0(:,it-1)  = vrad_azi(:)	    	 ; Radial wind
     pvrt_plot0(:,it-1)  = pvrt_azi(:)	    	 ; PV
@@ -715,7 +734,7 @@ begin
   end do     ; End time loop (do it = ts, tf)
 
 ;======================================
-; Reorder dimensions before plotting 
+; Reorder dimensions before plotting
 ;======================================
 
  ; Arrays now ordered [TIME * RADIUS] rather than [RADIUS * TIME]
@@ -728,16 +747,17 @@ begin
    pvrt_plot = pvrt_plot0(time|:,rad|:)
 
 ;=====================================================
-; Create a panel plot of Figs. 6a and 6b from N11 
+; Create a panel plot of Figs. 6a and 6b from N11
 ;=====================================================
 
+  ; Helen Edit file location
   ; Output file location and type
-    if (lay .eq. 1) then 
-     output = "/nfs/a37/earshar/nepartak/images/cyl_coords/hov_uv_"+dat+"_"+ens0+"_"+hy0+"_"+hy1+\
+    if (lay .eq. 1) then
+     output = "/nfs/see-fs-01_users/earhbu/TropicalCyclones/NCL_out/cyl_coords/hov_uv_"+dat+"_"+ens0+"_"+hy0+"_"+hy1+\
      	      "_"+cn0
-    elseif (lay .eq. 0) then 
-     output = "/nfs/a37/earshar/nepartak/images/cyl_coords/hov_uv_"+dat+"_"+ens0+"_"+hy0+"_"+cn0
-    end if 
+    elseif (lay .eq. 0) then
+     output = "/nfs/see-fs-01_users/earhbu/TropicalCyclones/NCL_out/cyl_coords/hov_uv_"+dat+"_"+ens0+"_"+hy0+"_"+cn0
+    end if
     wks = gsn_open_wks(opt,output)
 
   ; Set up panel plot and define colourmap
@@ -745,7 +765,7 @@ begin
     gsn_define_colormap(wks,"n11")
 
 ;==========================
-; Options for plotting 
+; Options for plotting
 ;==========================
 
   ; Tangential velocity
@@ -759,19 +779,19 @@ begin
     opts_vtan@cnInfoLabelOn                = False
     opts_vtan@cnLevelSelectionMode         = "ExplicitLevels"
 
-    if (tclr .eq. 0) then 
+    if (tclr .eq. 0) then
      opts_vtan@cnLevels                   = (/1.0, 2.0, 2.5, 3.0, 3.5, 4.0, \
                                               4.5, 5.0, 6.0, 7.0/)
      opts_vtan@cnFillColors               = (/0,2,3,4,5,6,7,8,9,10,11/)
-    elseif (tclr .eq. 1) then 
+    elseif (tclr .eq. 1) then
      opts_vtan@cnLevels                   = (/0.5, 1.5, 2.0, 2.5, 3.0, 3.5, \
                                               4.0, 4.5, 5.0, 6.0/)
      opts_vtan@cnFillColors               = (/0,2,3,4,5,6,7,8,9,10,11/)
-    elseif (tclr .eq. 2) then		    
+    elseif (tclr .eq. 2) then
      opts_vtan@cnLevels                   = (/0.5, 1.0, 1.5, 2.0, 2.5, 3.0, \
                                               3.5, 4.0, 4.5, 5.0/)
      opts_vtan@cnFillColors               = (/0,2,3,4,5,6,7,8,9,10,11/)
-    end if 
+    end if
 
     opts_vtan@gsnPaperOrientation          = "landscape"
     opts_vtan@tiMainString                 = ""
@@ -881,15 +901,15 @@ begin
     opts_vrad                          = opts_vtan
     delete([/opts_vrad@cnLevels,opts_vrad@cnFillColors/])
 
-    if (rclr .eq. 0) then 
+    if (rclr .eq. 0) then
      opts_vrad@cnLevels                     = (/0.0, -0.5, -1.0, -1.5, -2.0, \
                                                 -2.5, -3.0, -4.0, -5.0/)
      opts_vrad@cnFillColors                 = (/12,11,10,9,8,7,6,5,4,0/)
-    elseif (rclr .eq. 1) then 
+    elseif (rclr .eq. 1) then
      opts_vrad@cnLevels                     = (/0.0, -0.25, -0.5, -1.0, -1.5, \
                                                 -2.0, -2.5, -3.0, -4.0/)
      opts_vrad@cnFillColors                 = (/12,11,10,9,8,7,6,5,4,0/)
-    elseif (rclr .eq. 2) then 
+    elseif (rclr .eq. 2) then
      opts_vrad@cnLevels                     = (/0.0, -0.25, -0.5, -0.75, -1.0, \
                                                 -1.5, -2.0, -2.5, -3.0/)
      opts_vrad@cnFillColors                 = (/12,11,10,9,8,7,6,5,4,0/)
@@ -906,13 +926,13 @@ begin
     elseif (wclr .eq. 1) then
      opts_vvel@cnLevels                      = (/0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, \
                                                  0.50, 0.60, 0.70, 0.80/)
-     opts_vvel@cnFillColors                  = (/0,2,3,4,5,6,7,8,9,10,11,12/)    
- 
+     opts_vvel@cnFillColors                  = (/0,2,3,4,5,6,7,8,9,10,11,12/)
+
     elseif (wclr .eq. 2) then
      opts_vvel@cnLevels                      = (/0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, \
                                                  0.40, 0.45, 0.50, 0.60/)
      opts_vvel@cnFillColors                  = (/0,2,3,4,5,6,7,8,9,10,11,12/)
-    end if 
+    end if
 
   ; Radius of maximum wind (RMW) resources
     opts_rmw                               = True
@@ -930,13 +950,13 @@ begin
 ;========================
 
   ; Read in RMW data from text file (first 3 values equal to zero)
-    if (rmw .eq. 1) then 
+    if (rmw .eq. 1) then
      spd_plot = asciiread("/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/mlev_"+dat+\
                           "_"+ens0+"_rmw_calc1.txt",(/numTIMES/),"float")
-    elseif (rmw .eq. 0) then 
+    elseif (rmw .eq. 0) then
      spd_plot = asciiread("/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/"+dat+\
                           "_"+ens0+"_rmw_calc1.txt",(/numTIMES/),"float")
-    end if 
+    end if
 
   ; Tangential wind (LHS panel)
     vtan0 = gsn_csm_contour(wks,vtan_tend,opts_vtan)    ; Tangential wind tendency (filled)
@@ -948,7 +968,7 @@ begin
     overlay(vtan0,rmw0)				        ; Overlay RMW
     overlay(vtan0,cont0)                                ; Overlay tangential wind
     panel(0) = vtan0                                    ; Plot first panel
-    delete([/zero0,zero/])                              ; Tidy up 
+    delete([/zero0,zero/])                              ; Tidy up
 
   ; Radial wind (middle panel)
     vrad0 = gsn_csm_contour(wks,vrad_tend,opts_vrad)    ; Radial wind tendency
@@ -956,8 +976,8 @@ begin
     rmw0  = gsn_csm_xy(wks,spd_plot,time_int,opts_rmw)  ; RMW
     overlay(vrad0,cont0)                                ; Overlay tangential wind
     overlay(vrad0,rmw0)                                 ; Overlay RMW
-    panel(1) = vrad0                                    ; Plot second panel 
- 
+    panel(1) = vrad0                                    ; Plot second panel
+
   ; Vertical velocity (RHS panel)
     vvel0 = gsn_csm_contour(wks,vvel_plot,opts_vvel)    ; Vertical velocity
     zero0 = gsn_csm_contour(wks,vvel_plot,opts_z)       ; Zero line (vertical velocity)
@@ -969,7 +989,7 @@ begin
     delete([/zero0,zero/])                              ; Tidy up
 
 ;=============================================
-; Finally, put everything together and plot 
+; Finally, put everything together and plot
 ;=============================================
 
     optsP                       = True
@@ -988,4 +1008,4 @@ begin
     gsn_panel(wks,panel,(/1,3/),optsP)             ; Draw as a single plot
     frame(wks)
 
-end 
+end
