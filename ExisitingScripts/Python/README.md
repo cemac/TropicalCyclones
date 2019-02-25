@@ -13,3 +13,6 @@ Run scripts and save output for later:
   * Runs in python environment
   * altered output location
   * VERY slow
+
+May find Johns scripts useful 
+`/nfs/a37/scjea/plot_scripts/tc_analysis/`
