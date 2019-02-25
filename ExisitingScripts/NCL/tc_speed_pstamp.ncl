@@ -1,15 +1,15 @@
-; Script to produce postage stamp plot of horizontal windspeed for ensemble members 
+; Script to produce postage stamp plot of horizontal windspeed for ensemble members
 
-; Run using 
+; Run using
 
-; ncl dat=\"03T12\" dist=3.0 plev=3 opt=\"pdf\" cn0=\"geo_sm\" calc=1 
+; ncl dat=\"03T12\" dist=3.0 plev=3 opt=\"pdf\" cn0=\"geo_sm\" calc=1
 ; ts0=24 tf0=30 tc_speed_pstamp_cemac.ncl
 
 ; 'int'  = interval in the time loop
 ; 'dist' = size of box following storm (degrees)
 ; 'opt'  = output file format ("pdf","x11",etc)
 ; 'plev' = pressure level index (2,5,7,etc)
-; 'dat'  = initialisation time string ("02T12", "03T00", ...) 
+; 'dat'  = initialisation time string ("02T12", "03T00", ...)
 ; 'cn0'  = method of storm tracking ["slp", "geo", "geo_sm", "vort"] - default is "geo_sm"
 ; 'ts0'  = starting time index (3-119)
 ; 'tf0'  = ending time index (3-119)
@@ -22,9 +22,9 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
 load "/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/gsn_csm.ncl"
 
 ; Also load additional user-written functions
-load "/nfs/a37/earshar/ncl_func/st_rm.ncl"
-load "/nfs/a37/earshar/ncl_func/nc_times.ncl"
-load "/nfs/a37/earshar/ncl_func/nc_levs.ncl"
+load "ncl_func/st_rm.ncl"
+load "ncl_func/nc_times.ncl"
+load "ncl_func/nc_levs.ncl"
 
 begin
 
@@ -35,7 +35,7 @@ begin
   end if
 
 ;=============================================
-; Define set of simulations we want to plot 
+; Define set of simulations we want to plot
 ;=============================================
 
   ens_arr     = (/"em00","em01","em02","em03","em04","em05",\
@@ -43,13 +43,13 @@ begin
 
   numSIMS     = dimsizes(ens_arr)
 
-; Get file information before starting loop below 
+; Get file information before starting loop below
   diri        = "/nfs/a319/earshar/"+dat+"/"+ens_arr(0)                 ; Directory path
-  fili_prefix = "201607"+dat+"00Z_NPTK_4p4_L80_ra1t_"+ens_arr(0)        ; Main file name 
-  fili_b1     = systemfunc("cd "+diri+" ; ls "+fili_prefix+"_pb*.nc")   ; File type 
+  fili_prefix = "201607"+dat+"00Z_NPTK_4p4_L80_ra1t_"+ens_arr(0)        ; Main file name
+  fili_b1     = systemfunc("cd "+diri+" ; ls "+fili_prefix+"_pb*.nc")   ; File type
   fili_b      = diri+"/"+fili_b1
 
-; Call user-defined function and get number of times in file 
+; Call user-defined function and get number of times in file
   storm_rel   = st_rm(dat, ens_arr(0), "$ar/text/", dist, 0)
   centre      = storm_rel[6]             ; Storm track (position) array
   cdims	      = dimsizes(centre)         ; [4 * 120 * 2]
@@ -73,8 +73,8 @@ begin
 
 ; Create 4D array --> [12 * 120 * 150 * 150]
   speed_all   	       = new((/numSIMS,cdims(1),d0,d1/),float)
-  
-; Also create 3D arrays to hold values of latitude and longitude for each simulation, at each time 
+
+; Also create 3D arrays to hold values of latitude and longitude for each simulation, at each time
   pos_lat              = new((/numSIMS,cdims(1),d0/),float)
   pos_lon              = new((/numSIMS,cdims(1),d1/),float)
 
@@ -135,7 +135,7 @@ begin
    lon_all(sm,:,:,:)    = storm_rel[5]             ; Longitude array subset (following storm)
    centre_all(sm,:,:,:) = storm_rel[6]             ; Storm track (position) array
 
- ; Increase memory 
+ ; Increase memory
    setvalues NhlGetWorkspaceObjectId
      "wsMaximumSize" : 10000000000
    end setvalues
@@ -190,8 +190,8 @@ begin
    time_str  = sprinti("%0.2i UTC ", hour) + \
                sprinti("%0.2i ", day) \
              + month_abbr(month)
-   time_arr  = sprinti("%0.2i", day) + \ 
-               month_abbr(month) + \ 
+   time_arr  = sprinti("%0.2i", day) + \
+               month_abbr(month) + \
                "_" + sprinti("%0.2iZ", hour)
 
 ;==================================
@@ -199,8 +199,8 @@ begin
 ;==================================
 
   b         = addfile(fili_b,"r")               ; Read in 'pb' stream [u,v,w,vort,t,z,rh]
- 
-  do it     = ts0, tf0   
+
+  do it     = ts0, tf0
 
    print("Working on time: "+time_str(it)+" (it = "+it+")")
    itt = it + 1
@@ -300,11 +300,11 @@ begin
 ; Pressure levels ['pb' stream]
 ;=================================
 
- ; Rename single-layer variables 
+ ; Rename single-layer variables
    u_plane       = u
    v_plane       = v
 
- ; Rename all other variables 
+ ; Rename all other variables
    vort_plane    = vort
    geo_plane     = z
    t_plane       = t
@@ -411,7 +411,7 @@ begin
    delete([/lon,lat,lon1,lat1,u0,v0,u,v,vort,t,z,w/])
 
   end do  ; End time loop (do it = ts0, tf0)
- 
+
  end do	; End ensemble member loop (do sm = 0, numSIMS-1)
 
 ;===============================================
@@ -421,14 +421,17 @@ begin
  print("Working on panel plots!")
  do it = ts0, tf0
 
- ; Create object to hold multiple panels 
+ ; Create object to hold multiple panels
    panel       = new(numSIMS,graphic)
 
 ;=================================
 ; Output file type and location
 ;=================================
 
-   output = "/nfs/a37/earshar/nepartak/images/cart_coords/pstamp_uv"+pres(plev)+\
+   ; Helen Edit:
+   ;output = "/nfs/a37/earshar/nepartak/images/cart_coords/pstamp_uv"+pres(plev)+\
+   ;         "_"+dat+"_"+time_arr(it)
+   output = "/nfs/see-fs-01_users/earhbu/TropicalCyclones/NCL_out/cart_coords/pstamp_uv"+pres(plev)+\
             "_"+dat+"_"+time_arr(it)
    wks    = gsn_open_wks(opt,output)
 
@@ -473,7 +476,7 @@ begin
    opts_wind@tmYLLabelFontHeightF         = 0.021
    opts_wind@tmXTOn                       = "False"    ; No tickmarks on top x-axis
    opts_wind@tmYROn                       = "False"    ; No tickmarks on right y-axis
-   opts_wind@gsnMaximize                  = True       ; Maximise plot size 
+   opts_wind@gsnMaximize                  = True       ; Maximise plot size
    opts_wind@gsnAddCyclic                 = False
    opts_wind@gsnDraw                      = False      ; Do not draw the plot
    opts_wind@gsnFrame                     = False      ; Do not advance the frame
@@ -482,15 +485,15 @@ begin
 ; Customise lat/lon labels depending on plot size
 ;===================================================
 
- if (dist .le. 2.0) then 
+ if (dist .le. 2.0) then
 
- ; Bottom x-axis                                                                           
+ ; Bottom x-axis
    opts_wind@tmXBMode                     = "Explicit"
    opts_wind@tmXBValues                   = fspan(100.0, 150.0, 51)
    xb_labels0                             = sprintf("%0.1f~S~o~N~E",opts_wind@tmXBValues)
    opts_wind@tmXBLabels                   = xb_labels0
 
- ; Left y-axis                                                                             
+ ; Left y-axis
    opts_wind@tmYLMode                     = "Explicit"
    opts_wind@tmYLValues                   = fspan(0.0, 30.0, 31)
    yl_labels0                             = sprintf("%0.1f~S~o~N~E",opts_wind@tmYLValues)
@@ -503,15 +506,15 @@ begin
    opts_wind@tmXBValues                   = fspan(100.0, 150.0, 26)
    xb_labels0                             = sprintf("%0.1f~S~o~N~E",opts_wind@tmXBValues)
    opts_wind@tmXBLabels                   = xb_labels0
-  
+
  ; Left y-axis
    opts_wind@tmYLMode                     = "Explicit"
    opts_wind@tmYLValues                   = fspan(0.0, 30.0, 16)
    yl_labels0                             = sprintf("%0.1f~S~o~N~E",opts_wind@tmYLValues)
    opts_wind@tmYLLabels                   = yl_labels0
 
- end if 
- 
+ end if
+
 ;====================================================
 ; Finally, draw the plot with everything overlaid
 ;====================================================
@@ -519,7 +522,7 @@ begin
  ; Plot each simulation using 'gsn_csm_contour' function
    do ii      = 0, dimsizes(panel)-1
 
-  ; Add in correct latitude & longitude information before plotting 
+  ; Add in correct latitude & longitude information before plotting
     speed_plane = speed_all(ii,it,:,:)          ; Create temporary copy of 'speed_all(mm,tt,:,:)'
     speed_plane&latitude = pos_lat(ii,it,:)     ; Add latitude grid for chosen simulation
     speed_plane&longitude = pos_lon(ii,it,:)    ; Add longitude grid for chosen simulation
@@ -529,7 +532,7 @@ begin
 
     panel(ii) = gsn_csm_contour(wks, speed_all(ii,it,:,:), opts_wind )
 
-   end do 
+   end do
 
  ; Create panel plot with all ensemble members
    optsP                       = True
@@ -542,7 +545,7 @@ begin
    optsP@gsnPanelBottom        = 0.02
    optsP@gsnMaximize           = True
 
- ; Labelbar resources 
+ ; Labelbar resources
    optsP@pmLabelBarWidthF      = 0.6
    optsP@pmLabelBarHeightF     = 0.15
    optsP@lbLabelFontHeightF    = 0.01
@@ -554,7 +557,7 @@ begin
    optsP@lbTitlePosition       = "Bottom"
    optsP@lbBoxEndCapStyle      = "TriangleBothEnds"    ; Labelbar end shape
 
- ; Leave title blank 
+ ; Leave title blank
    optsP@txString              = ""
 
  ; Panel figure labels
@@ -571,4 +574,4 @@ begin
 
   end do     ; End time loop (do it = ts0, tf0)
 
-end 
+end
