@@ -9,7 +9,7 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from custom_cmap import *
+#from custom_cmap import *
 import iris.plot as qplt
 import cPickle as pickle
 import matplotlib.image as image
@@ -160,38 +160,38 @@ def main():
     X2, Y2 = np.meshgrid(x2, y2)
 
     # ax=fig.add_subplot(5,4,18)
-    #vvcontour = ax.contourf(X2,Y2,meandataarray/(i+1),levels=levelsvv,cmap=plt.cm.binary,extend='both')
-    #cbar = plt.colorbar(vvcontour)
+    # vvcontour = ax.contourf(X2,Y2,meandataarray/(i+1),levels=levelsvv,cmap=plt.cm.binary,extend='both')
+    # cbar = plt.colorbar(vvcontour)
     # ax.get_xaxis().set_visible(False)
     # ax.get_yaxis().set_visible(False)
-    #ax.set_title("Storm relative mean",fontsize=8)
+    # ax.set_title("Storm relative mean",fontsize=8)
 
     ax = fig.add_subplot(4, 5, 19)
     ax.imshow(image.imread("20170903IRMA.png"))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    #ax.set_title("Visible Satellite",fontsize=8)
+    # ax.set_title("Visible Satellite",fontsize=8)
     ax.annotate('IR', xy=(0.97, 0.03), xycoords='axes fraction', horizontalalignment='right',
                 verticalalignment='bottom', color='k', backgroundcolor='white', fontsize=12)
-    #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=0.75, color='k', linestyle=':')
-    #gl.xlabels_top = False
-    #gl.ylabels_right = False
-    #gl.xlocator = mticker.MultipleLocator(base=1)
-    #gl.ylocator = mticker.MultipleLocator(base=1)
-    #gl.xlabel_style= {'size':10}
-    #gl.ylabel_style= {'size':10}
-    #gl.xformatter = LONGITUDE_FORMATTER
-    #gl.yformatter = LATITUDE_FORMATTER
-    #ax.coastlines(resolution='10m', color='k', linewidth=1)
-    #plt.tight_layout(pad=0.5, w_pad=0.5, h_pad=0.5)
+    # gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=0.75, color='k', linestyle=':')
+    # gl.xlabels_top = False
+    # gl.ylabels_right = False
+    # gl.xlocator = mticker.MultipleLocator(base=1)
+    # gl.ylocator = mticker.MultipleLocator(base=1)
+    # gl.xlabel_style= {'size':10}
+    # gl.ylabel_style= {'size':10}
+    # gl.xformatter = LONGITUDE_FORMATTER
+    # gl.yformatter = LATITUDE_FORMATTER
+    # ax.coastlines(resolution='10m', color='k', linewidth=1)
+    # plt.tight_layout(pad=0.5, w_pad=0.5, h_pad=0.5)
     # plt.tight_layout(h_pad=0.2)
     plt.text(x=0.5, y=0.96, s="Outgoing long wave radiation",
              fontsize=18, ha="center", transform=fig.transFigure)
     print(timeselect)
-    #plt.text(x=0.5, y=0.935, s="Observed surface level radar reflectivity", fontsize=18, ha="center", transform=fig.transFigure)
+    # plt.text(x=0.5, y=0.935, s="Observed surface level radar reflectivity", fontsize=18, ha="center", transform=fig.transFigure)
     plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
              fontsize=12, ha="center", transform=fig.transFigure)
-    #plt.suptitle("Outgoing long wave radiation ($W/m^2$) at {0}:00".format(timeselect,plev))
+    # plt.suptitle("Outgoing long wave radiation ($W/m^2$) at {0}:00".format(timeselect,plev))
     plt.show()
 
 

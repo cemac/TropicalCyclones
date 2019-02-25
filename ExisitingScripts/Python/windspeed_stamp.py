@@ -20,7 +20,7 @@ def main():
     data_loc = '/nfs/a37/scjea/model_runs/Hagupit/u-ap087/data/4p4/1203_12Z/wind_plev/'
     # Should include everything but 'NN.pp' where NN is the ensemble member.
     data_name = 'uvplev_4p4_1203_12Z_em'
-    outfile_loc = '/nfs/a319/scjea/figures/'
+    outfile_loc = './'
     # time data to be added to the outfile
     outfile_name = 'wspeed_1203_12Z_4p4_850hPa_'
 
