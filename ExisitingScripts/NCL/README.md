@@ -14,6 +14,7 @@ Run and save output for comparison
 * `module load ncl/6.5.0/1/default`
 * access to sam's user functions
 * access to data
+* `source .env` 
 
 ## Trouble shooting:
 
@@ -21,4 +22,4 @@ Run and save output for comparison
   * was clear sam puts ascii files in one place grep through his ncl_scripts to find location
   `/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/`
 * Unable to open input file (radar_new)
- * added sams radar_new cmap to dir
+ * added sams radar_new cmap to dir and set environmentvariable

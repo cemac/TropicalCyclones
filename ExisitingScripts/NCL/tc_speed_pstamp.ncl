@@ -443,7 +443,7 @@ begin
    gsn_define_colormap(wks,"radar_new")
 
  ; Change the colour map around & make first colour transparent
-   cmap = read_colormap_file("/radar_new.rgb")
+   cmap = read_colormap_file("radar_new")
    cmap(0,3) = 0.0
 
 ;==========================
