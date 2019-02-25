@@ -88,7 +88,7 @@ begin
 ; 'dist'    = size of box following storm (degrees)
 ; 'mins'    = analyse 1-h (0) or 5-min (1) data
 
-  storm_rel = st_rm(dat, ens0, "$ar/text/", dist, 0)
+  storm_rel = st_rm(dat, ens0, "/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/", dist, 0)
   u_cyc     = storm_rel[0]             ; Zonal wind
   v_cyc     = storm_rel[1]             ; Meridional wind
   vel_cyc   = storm_rel[2]             ; Vector wind

@@ -50,7 +50,7 @@ begin
   fili_b      = diri+"/"+fili_b1
 
 ; Call user-defined function and get number of times in file
-  storm_rel   = st_rm(dat, ens_arr(0), "$ar/text/", dist, 0)
+  storm_rel   = st_rm(dat, ens_arr(0), "/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/", dist, 0)
   centre      = storm_rel[6]             ; Storm track (position) array
   cdims	      = dimsizes(centre)         ; [4 * 120 * 2]
 
@@ -127,7 +127,7 @@ begin
  ; 'dist'      = size of box following storm (degrees)
  ; 'mins'      = analyse 1-h (0) or 5-min (1) data
 
-   storm_rel   	        = st_rm(dat, ens_arr(sm), "$ar/text/", dist, 0)
+   storm_rel   	        = st_rm(dat, ens_arr(sm), "/nfs/a37/earshar/ncl_scripts/nepartak/archer_march2018/text/", dist, 0)
    numINPUT_a  	        = storm_rel[3]             ; Number of times in file
    uc_all(sm,:,:)       = storm_rel[0]             ; Zonal wind
    vc_all(sm,:,:)       = storm_rel[1]             ; Meridional wind
