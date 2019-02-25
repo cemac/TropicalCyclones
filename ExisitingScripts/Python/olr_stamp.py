@@ -54,7 +54,7 @@ def main():
 
         # lonn=lonn-360
         filename = "olralle{0}.pp".format(i)
-        #filename2 = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp".format(i,day,time)
+        # filename2 = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp".format(i,day,time)
 
         # print(iris.load(filename))
         # print("pa")
@@ -94,7 +94,7 @@ def main():
         dataarray = ir.data
 
     # /nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pa.pp
-    #filename = "/nfs/a37/scjea/for_will/20170918T0000Z_MARIA_km4p4_ra1t_em00_pa{0:03}.pp".format(timeselect)
+    # filename = "/nfs/a37/scjea/for_will/20170918T0000Z_MARIA_km4p4_ra1t_em00_pa{0:03}.pp".format(timeselect)
 
         # slp=iris.load(filename)[13] #13th cube happens to be SLP
 
