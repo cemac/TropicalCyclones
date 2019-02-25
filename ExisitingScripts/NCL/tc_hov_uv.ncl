@@ -28,24 +28,6 @@
 ; 'centre'    --> 'it-1'
 ; 'pd' stream --> 'it-2'
 
-dat         = "02T12"
-opt         = "pdf"
-ens0        = "em11"
-dist        = 3.0
-ts          = 42
-tf          = 86
-mlev0       = 13
-rmw         = 1
-calc        = 1
-tclr        = 2
-rclr        = 2
-wclr        = 1
-lay         = 1
-mlev1       = 24
-ar          = 1.5
-nr          = 31
-ar0         = 1.5
-cn0         = "geo_sm"
 
 ; Load main NCL libraries ($NCARG_ROOT = /apps/applications/ncl/6.5.0/1/default)
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
