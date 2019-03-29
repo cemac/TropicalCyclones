@@ -1,0 +1,17 @@
+'setting','value','description'
+data_loc,'/nfs/a37/scjea/model_runs/Hagupit/u-ap087/data/4p4/1203_12Z/wind_plev/',
+data_name,'uvplev_4p4_1203_12Z_em',
+outfile_loc,'./'
+outfile_name,'wspeed_1203_12Z_4p4_850hPa_',
+ens_members, 12
+plev,850,
+md,1203,
+TT,12,
+model,'4p4',
+v_times,[0, 3, 6, 9, 12, 15, 18, 21],
+init_day,3,
+init_time,12,
+final_day,8,
+final_time,9,
+yr,2014,
+mth,12,
