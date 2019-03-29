@@ -18,3 +18,11 @@ Set up to work in Python 2 and 3. Calculations and Ploters separate.
 ## Phase 3 - Packaging
 
 WSSCP-TC-toolkit
+
+## Phase 4 - Modernising
+
+1. RMED-toolkit uses python 2.7
+2. no parallel processing
+
+* WSSCP-TC-toolkit - py3
+* WSSCP-TC-toolkit-parallel - py3
