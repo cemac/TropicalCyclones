@@ -23,13 +23,9 @@ Memebers:
 """
 import numpy as np
 import iris
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import matplotlib
-from matplotlib.colors import from_levels_and_colors
-import matplotlib.ticker as mticker
-from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 
 
@@ -74,7 +70,7 @@ def plot_winds(ax, u, v, mod):
 
 def map_formatter(ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
                   top_label=False, bottom_label=True, right_label=False,
-                  left_label=True, central_longitude=0.0, res='10m'):
+                  left_label=True, res='10m'):
     '''
     Adds gridlines, countries and lat/lon labels to the plot.
     '''
@@ -129,6 +125,6 @@ def box_constraint(minlat, maxlat, minlon, maxlon):
         longitude=lambda cell: cell < maxlon)
     latitude_constraint1 = iris.Constraint(latitude=lambda cell: cell > minlat)
     latitude_constraint2 = iris.Constraint(latitude=lambda cell: cell < maxlat)
-    box_constraint = (longitude_constraint1 & longitude_constraint2 &
+    tc_box_constraint = (longitude_constraint1 & longitude_constraint2 &
                       latitude_constraint1 & latitude_constraint2)
-    return box_constraint
+    return tc_box_constraint

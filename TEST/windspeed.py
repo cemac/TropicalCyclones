@@ -27,6 +27,7 @@ import numpy as np
 import iris
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+import pandas as pd
 from toolkit import *
 
 
@@ -38,8 +39,12 @@ class windspeed(object):
     Members:
 
     '''
-    def __init__(self, configfile):
-
+    def __init__(self, configfile='configfile', stashfile='stashvars'):
+        '''
+        Args:
+            configfile (string): filepath to configuration settings
+            stashfile (string): filepath to shashfile codes
+        '''
         # Define all constraints and locate data.
         data_loc = '/nfs/a37/scjea/model_runs/Hagupit/u-ap087/data/4p4/1203_12Z/wind_plev/'
         # Should include everything but 'NN.pp' where NN is the ensemble member
