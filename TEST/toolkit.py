@@ -29,10 +29,55 @@ import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 
 
+def checker(dd, hr, d0, dN, t0, tN):
+    if dd < d0 or (dd == d0 and hr < t0 + 1):
+        return continue
+    if dd > dN or (dd > dN - 1 and hr > tN - 1):
+        return continue
+    lead_time = (dd - d0) * 24 + (hr - t0)
+    print('Plotting data for dd = {0}, hr = {1}'.format(dd, hr))
+    return lead_time
+
+
 def find_subplot_dims(n):
     n_cols = np.ceil(n**0.5).astype(int)
     n_rows = np.ceil(1. * n / n_cols).astype(int)
     return n_rows, n_cols
+
+
+def uv(df, u_cons, t_cons, p_cons, b_cons):
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        u = iris.load_cube(df, u_cons).extract(t_cons & p_cons & b_cons)
+    return u
+
+
+def winds(u, v, em):
+    ws = (u**2 + v**2)**0.5
+    coord = iris.coords.AuxCoord(em, long_name='ensemble_member')
+    u.add_aux_coord(coord)
+    v.add_aux_coord(coord)
+    ws.add_aux_coord(coord)
+    return u, v, ws
+
+
+def annotate(axs, StringFormat, xy):
+    # Add initial time, valid time etc.
+    axs.annotate(StringFormat, xy=xy, xycoords='figure fraction',
+                 horizontalalignment='right', verticalalignment='top',
+                 color='k', fontsize=15)
+
+
+def label_fixer(i, ncols, nrows):
+    # Make sure only the outside axis are labelled
+    if i % ncols != 0:
+        left_label = False
+    else:
+        left_label = True
+    if i < ncols * (nrows - 1):
+        bottom_label = False
+    else:
+        bottom_label = True
+    return left_label, bottom_label
 
 
 def plot_wspeed(ax, ws):
@@ -89,19 +134,18 @@ def map_formatter(ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
     gl.yformatter = LATITUDE_FORMATTER
 
 
-def find_centre_3h(md, TT, em, v_day, v_time, mod):
+def find_centre_3h(md, TT, em, v_day, v_time, mod, froot, fpat, dom_r):
     '''
     Loads the track data for a specific time. This function is tailored to my
     own data, will have to be rewritten depending on how the users track data
     is stored. If you want just a single domain simply create a function that
     returns the centre of this domain.
     '''
-    if mod == '4p4':
-        filepath = "/nfs/a37/scjea/plot_scripts/tc_analysis/intensity_track/track_data/tcver3hr_{3}_{0:04d}_{1:02d}Z_en{2:02d}.npz".format(
-            md, TT, em, mod)
-    elif mod == 'glm':
-        filepath = "/nfs/a37/scjea/plot_scripts/tc_analysis/intensity_track/track_data/tcver3hr_newinterp_{3}_{0:04d}_{1:02d}Z_en{2:02d}.npz".format(
-            md, TT, em, mod)
+    if mod == 'glm':
+        fpatfull = froot + '_newinterp_' + fpat
+    else:
+        fpatfull = froot + fpat
+    filepath = fpatfull.format(md, TT, em, mod)
     track_data = np.load(filepath)
     lats = track_data['lats']
     lons = track_data['lons']
@@ -114,7 +158,11 @@ def find_centre_3h(md, TT, em, v_day, v_time, mod):
     index2 = np.where(times == v_time)
     cenlat = lats[index2]
     cenlon = lons[index2]
-    return cenlat[0], cenlon[0]
+    minlat = cenlat[0] - dom_rad
+    maxlat = cenlat[0] + dom_rad
+    minlon = cenlon[0] - dom_rad
+    maxlon = cenlon[0] + dom_rad
+    return minlat, maxlat, minlon, maxlon
 
 
 def box_constraint(minlat, maxlat, minlon, maxlon):

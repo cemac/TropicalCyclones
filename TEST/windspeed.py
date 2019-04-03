@@ -28,6 +28,7 @@ import iris
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
+import ast
 from toolkit import *
 
 
@@ -39,101 +40,95 @@ class windspeed(object):
     Members:
 
     '''
-    def __init__(self, configfile='configfile', stashfile='stashvars'):
+    def __init__(s, configfile='configfile', stashfile='stashvars',
+                 plotfile='plotconf'):
         '''
         Args:
             configfile (string): filepath to configuration settings
             stashfile (string): filepath to shashfile codes
         '''
+        # Read configuration file to import settings
+        conf_df = pd.read_csv('configfile.csv')
         # Define all constraints and locate data.
-        data_loc = '/nfs/a37/scjea/model_runs/Hagupit/u-ap087/data/4p4/1203_12Z/wind_plev/'
-        # Should include everything but 'NN.pp' where NN is the ensemble member
-        data_name = 'uvplev_4p4_1203_12Z_em'
-        outfile_loc = './'
-        # time data to be added to the outfile
-        outfile_name = 'wspeed_1203_12Z_4p4_850hPa_'
-
-        ens_members = np.arange(12)  # Ensemble members to use (i.e. 12)
-        plev = 850  # Must be alevel that is in the data.
-
-        md = 1203
-        TT = 12  # Forecast initial times
-        model = '4p4'
-
-        v_times = [0, 3, 6, 9, 12, 15, 18, 21]  # Times during day to plot
-        init_day = 3
-        init_time = 12  # The first plot will be of the time after this time
-        final_day = 8
-        final_time = 9  # Last time to plot
-        v_days = np.arange(init_day, init_day + 6, 1)
-        yr = 2014
-        mth = 12
-
-        domain_rad = 4.  # Domain is 2*domain_rad x 2*domain_rad
-
-        u_stash = 'm01s15i201'
-        v_stash = 'm01s15i202'
-        slp_stash = 'm01s16i222'
-        u_constraint = iris.AttributeConstraint(STASH=u_stash)
-        v_constraint = iris.AttributeConstraint(STASH=v_stash)
+        s.data_loc = conf_df.data_loc[0]
+        s.data_name = conf_df.data_name[0]
+        s.outfile_loc = conf_df.outfile_loc[0]
+        s.outfile_name = conf_df.outfile_name .values
+        s.ens_members = np.arange(int(conf_df.ens_members[0]))
+        s.plev = int(conf_df.plev[0])
+        s.md = int(conf_df.md[0])
+        s.TT = int(conf_df.TT[0])
+        s.model = conf_df.model[0]
+        s.v_times = ast.literal_eval(conf_df.v_times[0])
+        s.init_day = int(conf_df.init_day[0])
+        s.init_time = int(conf_df.init_time[0])
+        s.final_day = int(conf_df.final_day[0])
+        s.final_time = int(conf_df.final_time[0])
+        s.v_days = np.arange(s.init_day, s.init_day + 6, 1)
+        s.yr = int(conf_df.yr[0])
+        s.mth = int(conf_df.mth[0])
+        s.domain_rad = float(conf_df.domain_rad[0])
+        print('Loaded configuration settings')
+        # add stash codes
+        stash_df = pd.read_csv('stashvars.csv')
+        u_stash = stash_df.u_stash[0]
+        v_stash = stash_df.v_stash[0]
+        s.slp_stash = stash_df.slp_stash[0]
+        s.u_constraint = iris.AttributeConstraint(STASH=u_stash)
+        s.v_constraint = iris.AttributeConstraint(STASH=v_stash)
+        s.froot = conf_df.track_data_root[0]
+        s.fpat = conf_df.track_data_metadata[0]
 
         # Determine the dimensions of the stamp plot according to no members
-        n_ems = len(ens_members)
-        nrows, ncols = find_subplot_dims(n_ems)
+        s.n_ems = len(s.ens_members)
+        s.nrows, s.ncols = find_subplot_dims(s.n_ems)
+        s.p_constraint = iris.Constraint(pressure=s.plev)
+        print('Loaded stash codes')
 
-        p_constraint = iris.Constraint(pressure=plev)
+        # Plotting configuration
+        s.plot_df = pd.read_csv('stashvars.csv')
+        print('Loaded plot settings file')
 
-        for dd in v_days:
-            for hr in v_times:
-                if dd < init_day or (dd == init_day and hr < init_time + 1):
-                    continue
-                if dd > final_day or (dd > final_day - 1 and hr > final_time - 1):
-                    continue
-                lead_time = (dd - init_day) * 24 + (hr - init_time)
-                print 'Plotting data for dd = {0}, hr = {1}'.format(dd, hr)
-                lead_time = (dd - init_day) * 24 + (hr - init_time)
+    def checker(dd, hr, d0, dN, t0, tN):
+        if dd < d0 or (dd == d0 and hr < t0 + 1):
+            return continue
+        if dd > dN or (dd > dN - 1 and hr > tN - 1):
+            return continue
+
+    def loop(s, vdays, vtimes, ):
+        for dd in vdays:
+            for hr in vtimes:
+                lead_time = checker(dd, hr, s.init_day, s.final_day,
+                                    s.init_time, s.final_time)
                 time_constraint = iris.Constraint(
-                    time=iris.time.PartialDateTime(year=yr, month=mth,
+                    time=iris.time.PartialDateTime(year=s.yr, month=s.mth,
                                                    day=dd, hour=hr))
-                outfile = outfile_loc + outfile_name + \
-                    '{0:02d}_{1:02d}Z.png'.format(dd, hr)
-
+                out = outfile_loc + outfile_name
+                outfile = out + '{0:02d}_{1:02d}Z.png'.format(dd, hr)
                 # Fix domain according to position of ensemble member 0,
                 # this assumes the position is similar in ensemble members
-                [cenlat, cenlon] = find_centre_3h(md, TT, 0, dd, hr, model)
-                minlat = cenlat - domain_rad
-                maxlat = cenlat + domain_rad
-                minlon = cenlon - domain_rad
-                maxlon = cenlon + domain_rad
-                b_constraint = box_constraint(minlat, maxlat, minlon, maxlon)
-
+                mmll = find_centre_3h(s.md, s.TT, 0, dd, hr, s.model,
+                                      s.froot, s.fpat, s.domain_rad)
+                b_constraint = box_constraint(mmll[0], mmll[1], mmll[2],
+                                              mmll[3])
                 # Create figure
-                fig, axs = plt.subplots(nrows, ncols, dpi=100, subplot_kw={
+                fig, axs = plt.subplots(s.nrows, s.ncols, dpi=100, subplot_kw={
                                         'projection': ccrs.PlateCarree()})
-                for i, em in enumerate(ens_members):
-
+                for i, em in enumerate(s.ens_members):
                     # Determine figure coordinate
-                    ic = i % ncols
-                    ir = i / ncols
+                    ic = i % s.ncols
+                    ir = i / s.ncols
                     if len(axs.shape) > 1:
                         ax = axs[ir, ic]
                     else:
                         ax = axs[ic]
-
                     # Load the data for this ensemble member at this time
-                    df = data_loc + data_name + '{0:02d}.pp'.format(em)
-                    with iris.FUTURE.context(cell_datetime_objects=True):
-                        u = iris.load_cube(df, u_constraint).extract(
-                            time_constraint & p_constraint & b_constraint)
-                        v = iris.load_cube(df, v_constraint).extract(
-                            time_constraint & p_constraint & b_constraint)
-                    ws = (u**2 + v**2)**0.5
-
-                    coord = iris.coords.AuxCoord(em, long_name='ensemble_member')
-                    u.add_aux_coord(coord)
-                    v.add_aux_coord(coord)
-                    ws.add_aux_coord(coord)
-
+                    df = s.data_loc + s.data_name + '{0:02d}.pp'.format(em)
+                    u = uv(df, s.u_constraint, time_constraint, s.p_constraint,
+                           box_constraint)
+                    v = uv(df, s.v_constraint, time_constraint, s.p_constraint,
+                           box_constraint)
+                    u, v, ws = winds(u, v, em)
                     wspeed_plt = plot_wspeed(ax, ws)
                     plot_winds(ax, u, v, model)
 
@@ -174,21 +169,17 @@ class windspeed(object):
                 cbar.ax.tick_params(labelsize=18)
                 cbar.set_label('ms$^{-1}$', size=18)
                 axs = fig.gca()
-
-                # Add initial time, valid time etc.
-                axs.annotate('Initial time: {0}/{1}/{2}, {3:02d}Z'.format(str(md)[-2:],
-                             str(md)[:2], yr, TT), xy=(0.95, 0.95),
-                             xycoords='figure fraction',
-                             horizontalalignment='right',
-                             verticalalignment='top', color='k', fontsize=15)
-                axs.annotate('Valid time: {0:02d}/{1:02d}/{2}, {3:02d}Z'.format(dd, mth, yr, hr),
-                             xy=(0.95, 0.925), xycoords='figure fraction',
-                             horizontalalignment='right', verticalalignment='top',
-                             color='k', fontsize=15)
-                axs.annotate('T+{0}Z'.format(lead_time), xy=(0.95, 0.9),
-                             xycoords='figure fraction',
-                             horizontalalignment='right',
-                             verticalalignment='top', color='k', fontsize=15)
-
-                plt.savefig(outfile)
+                string1 = ('Initial time: {0}/{1}/{2}, {3:02d}' +
+                           'Z').format(str(s.md)[-2:], str(s.md)[:2],
+                                       s.yr, s.TT)
+                xy1 = [0.95, 0.95]
+                string2 = ('Valid time: {0:02d}/{1:02d}/{2}, {3:02d}' +
+                           'Z').format(dd, s.mth, s.yr, hr)
+                xy2 = [0.95, 0.925]
+                string3 = 'T+{0}Z'.format(lead_time)
+                xy3 = [0.95, 0.9]
+                annotate(axs, string1, xy1)
+                annotate(axs, string2, xy2)
+                annotate(axs, string3, xy3)
+                plt.savefig(s.outfile)
                 plt.close()
