@@ -111,7 +111,8 @@ class windspeed(object):
             else:
                 ax = axs[ic]
             llab, blab = label_fixer(i, s.ncols, s.nrows)
-            s.plot_i(ax, dd, hr, em, outfile, tcon, bcon, ltime, llab, blab)
+            wspeed_plt = s.plot_i(ax, dd, hr, em, outfile, tcon, bcon, ltime,
+                                  llab, blab)
         # Reduce white space and then make whole figure bigger,
         # keeping the aspect ratio constant.
         plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
@@ -133,12 +134,12 @@ class windspeed(object):
         string2 = ('Valid time: {0:02d}/{1:02d}/{2}, {3:02d}' +
                    'Z').format(dd, s.mth, s.yr, hr)
         xy2 = [0.95, 0.925]
-        string3 = 'T+{0}Z'.format(lead_time)
+        string3 = 'T+{0}Z'.format(ltime)
         xy3 = [0.95, 0.9]
         annotate(axs, string1, xy1)
         annotate(axs, string2, xy2)
         annotate(axs, string3, xy3)
-        plt.savefig(s.outfile)
+        plt.savefig(outfile)
         plt.close()
 
     def plot_i(s, ax, dd, hr, em, outfile, tcon, bcon, ltime, llab, blab):
@@ -159,6 +160,7 @@ class windspeed(object):
                     horizontalalignment='right',
                     verticalalignment='bottom', color='k',
                     backgroundcolor='white', fontsize=20)
+        return wspeed_plt
 
     def t_const(s, yr, mm, dd, hr, d0, dN, t0, tN):
         ltime = checker(dd, hr, d0, dN, t0, tN)
@@ -174,4 +176,4 @@ class windspeed(object):
         mmll = find_centre_3h(s.md, s.TT, 0, dd, hr, s.model,
                               s.froot, s.fpat, s.domain_rad)
         bcon = box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
-        return outfile, tcon, bcon, ltime
+        return outfile[0], tcon, bcon, ltime
