@@ -31,9 +31,9 @@ import matplotlib.cm as mpl_cm
 
 def checker(dd, hr, d0, dN, t0, tN):
     if dd < d0 or (dd == d0 and hr < t0 + 1):
-        return continue
+        lead_time = False
     if dd > dN or (dd > dN - 1 and hr > tN - 1):
-        return continue
+        lead_time = False
     lead_time = (dd - d0) * 24 + (hr - t0)
     print('Plotting data for dd = {0}, hr = {1}'.format(dd, hr))
     return lead_time
