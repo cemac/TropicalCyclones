@@ -190,3 +190,9 @@ def calc_grad(data, dx):
     grad[-1] = (1 / dx) * (data[-1] - data[-2])
     grad[1:-1] = (1 / (2 * dx)) * (data[2:] - data[:-2])
     return grad
+
+
+def extracter(fload, minlon, minlat, minlat, maxlat):
+    ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
+                       < maxlon, latitude=lambda cell: minlat < cell < maxlat))
+    return ir
