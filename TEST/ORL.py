@@ -3,7 +3,7 @@
 
 .. module:: ORL
     :platform: Unix
-    :synopis: Produces a simple stamp plot of windspeed for an ensemble of size
+    :synopis: Produces a simple stamp plot of ORL for an ensemble of size
               N
 
 .. moduleauthor: John Ashcroft, CEMAC (UoL) February 2019.
@@ -25,11 +25,16 @@ Memebers:
 
 import numpy as np
 import iris
-import ast
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import pandas as pd
 import toolkit as tct
+import iris.analysis.calculus
+import ast
+import pandas as pd
+import matplotlib.ticker as mticker
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cPickle as pickle
+import matplotlib.image as image
 
 
 class ORL(object):
@@ -39,53 +44,29 @@ class ORL(object):
 
     '''
 
-    def __init__(self, configfile='configfile', stashfile='stashvars',
-                 plotfile='plotconf'):
+    def __init__(self, configfile='configfile', imfile='20170903IRMA.png'):
         '''
         Args:
-            configfile (string): filepath to configuration settings
-            stashfile (string): filepath to shashfile codes
+            timeselect (int): number of hours after run
+            stashfile (string): filepath sat image
         '''
         # Read configuration file to import settings
         conf_df = pd.read_csv(configfile + '.csv')
-        # Define all constraints and locate data.
-        self.data_loc = conf_df.data_loc[0]
-        self.data_name = conf_df.data_name[0]
-        self.outfile_loc = conf_df.outfile_loc[0]
-        self.outfile_name = conf_df.outfile_name .values
-        self.ens_members = np.arange(int(conf_df.ens_members[0]))
-        self.plev = int(conf_df.plev[0])
-        self.md = int(conf_df.md[0])
-        self.TT = int(conf_df.TT[0])
-        self.model = conf_df.model[0]
+        self.timeselect = conf_df.timeselect[0]
+        self.levelsvv = ((np.arange(25)) * 10) + 100
+        self.imfile = imfile
+        self.root = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp"
         self.v_times = ast.literal_eval(conf_df.v_times[0])
         self.init_day = int(conf_df.init_day[0])
-        self.init_time = int(conf_df.init_time[0])
         self.final_day = int(conf_df.final_day[0])
-        self.final_time = int(conf_df.final_time[0])
         self.v_days = np.arange(self.init_day, self.init_day + 6, 1)
         self.yr = int(conf_df.yr[0])
         self.mth = int(conf_df.mth[0])
-        self.domain_rad = float(conf_df.domain_rad[0])
-        print('Loaded configuration settings')
-        # add stash codes
-        stash_df = pd.read_csv(stashfile + '.csv')
-        u_stash = stash_df.u_stash[0]
-        v_stash = stash_df.v_stash[0]
-        self.slp_stash = stash_df.slp_stash[0]
-        self.u_constraint = iris.AttributeConstraint(STASH=u_stash)
-        self.v_constraint = iris.AttributeConstraint(STASH=v_stash)
-        self.froot = conf_df.track_data_root[0]
-        self.fpat = conf_df.track_data_metadata[0]
-        # Determine the dimensions of the stamp plot according to no members
-        self.n_ems = len(self.ens_members)
-        self.nrows, self.ncols = tct.find_subplot_dims(self.n_ems)
-        self.p_constraint = iris.Constraint(pressure=self.plev)
-        print('Loaded stash codes')
-
-        # Plotting configuration
-        self.plot_df = pd.read_csv(plotfile + '.csv')
-        print('Loaded plot settings file')
+        self.data = "/nfs/a299/TCs/irma/IRMA_0906_12Z_ra1t_em00_pa.pp"
+        f = iris.load(self.data)
+        cube = f[1]
+        self.latt = cube.coord('latitude').points
+        self.lonn = cube.coord('longitude').points
 
     def loop(self):
         """loop
@@ -94,101 +75,78 @@ class ORL(object):
         """
         for dd in self.v_days:
             for hr in self.v_times:
-                self.dayhour(self.yr, self.mth, dd, hr, self.init_day,
-                             self.final_day, self.init_time, self.final_time)
+                newir, fig = self.plots_loop(dd, hr)
+        self.finplot(newir, fig)
 
-    def dayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
-        """dayhour
+    def plots_loop(self, day, time):
+        """loop
         Args:
         Returns:
         """
-        outfile, tcon, bcon, ltime = self.t_const(yr, mm, dd, hr, d0,
-                                                  dN, t0, tN)
-        if ltime is False:
-            return
-        # Create figure
-        fig, axs = plt.subplots(self.nrows, self.ncols, dpi=100, subplot_kw={
-                                'projection': ccrs.PlateCarree()})
-        for i, em in enumerate(self.ens_members):
-            # Determine figure coordinate
-            ic = i % self.ncols
-            ir = i / self.ncols
-            if len(axs.shape) > 1:
-                iric = [ir, ic]
-                ax = axs[iric]
-            else:
-                ax = axs[ic]
-            llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
-            wspeed_plt = self.plot_i(ax, em, tcon, bcon, llab, blab)
-        # Reduce white space and then make whole figure bigger,
-        # keeping the aspect ratio constant.
-        plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
-                                  top=0.95, left=0.075, right=0.925)
-        w, h = plt.gcf().get_size_inches()
-        plt.gcf().set_size_inches(w * 3, h * 3)
-        ax = fig.get_axes()
-        # Format colourbar
-        cbar = plt.colorbar(wspeed_plt, ax=fig.get_axes(),
-                            orientation='horizontal', extend='both',
-                            fraction=0.046, pad=0.09)
-        cbar.ax.tick_params(labelsize=18)
-        cbar.set_label('ms$^{-1}$', size=18)
-        axs = fig.gca()
-        string1 = ('Initial time: {0}/{1}/{2}, {3:02d}'
-                   + 'Z').format(str(self.md)[-2:], str(self.md)[:2],
-                                 self.yr, self.TT)
-        xy1 = [0.95, 0.95]
-        string2 = ('Valid time: {0:02d}/{1:02d}/{2}, {3:02d}'
-                   + 'Z').format(dd, self.mth, self.yr, hr)
-        xy2 = [0.95, 0.925]
-        string3 = 'T+{0}Z'.format(ltime)
-        xy3 = [0.95, 0.9]
-        tct.annotate(axs, string1, xy1)
-        tct.annotate(axs, string2, xy2)
-        tct.annotate(axs, string3, xy3)
-        plt.savefig(outfile)
-        plt.close()
+        lonn = self.lonn
+        latt = self.latt
+        fig = plt.figure(figsize=(15, 12))
+        for i in range(18):
+            filename = self.root.format(i, day, time)
+            ir = iris.load(filename)[0][0]
+            minlon = float(lonn[self.timeselect] - 5)
+            maxlon = float(lonn[self.timeselect] + 5)
+            minlat = float(latt[self.timeselect] - 5)
+            maxlat = float(latt[self.timeselect] + 5)
+            if i == 0:
+                ir_temp = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
+            ir = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
+            x = ir.coord('longitude').points
+            y = ir.coord('latitude').points
+            X, Y = np.meshgrid(x, y)
+            n = i + 1
+            newir = self.plotORL(ir, fig, n, latt, lonn, ir_temp)
+        return newir, fig
 
-    def plot_i(self, ax, em, tcon, bcon, llab, blab):
-        """plot_i
-        Args:
-        Returns:
-        """
-        # Load the data for this ensemble member at this time
-        df = self.data_loc + self.data_name + '{0:02d}.pp'.format(em)
-        u = tct.uv(df, self.u_constraint, tcon, self.p_constraint, bcon)
-        v = tct.uv(df, self.v_constraint, tcon, self.p_constraint, bcon)
-        u, v, ws = tct.winds(u, v, em)
-        wspeed_plt = tct.plot_wspeed(ax, ws)
-        tct.plot_winds(ax, u, v, self.model)
-        # Add grid lines and ticks etc.
-        tct.map_formatter(ax, bottom_label=blab, left_label=llab, labelsize=20,
-                          tick_base_x=2, tick_base_y=2)
-
-        # Annotate to add the ensemble member onto the plot
-        ax.annotate('{0:02d}'.format(em), xy=(0.97, 0.03),
-                    xycoords='axes fraction',
-                    horizontalalignment='right',
+    def plotORL(self, ir, fig, n, latt, lonn, irtemp):
+        dataarray = np.zeros((750, 1000))
+        dataarray = ir.data
+        x = ir.coord('longitude').points
+        y = ir.coord('latitude').points
+        X, Y = np.meshgrid(x, y)
+        ax = fig.add_subplot(4, 5, n, projection=ccrs.PlateCarree())
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                          linewidth=1, color='k', linestyle=':')
+        gl.xlabels_top = False
+        gl.ylabels_right = False
+        gl.xlocator = mticker.MultipleLocator(base=2)
+        gl.ylocator = mticker.MultipleLocator(base=2)
+        gl.xlabel_style = {'size': 8}
+        gl.ylabel_style = {'size': 8}
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
+        ax.coastlines(resolution='10m', color='k', linewidth=1)
+        ax.annotate('P{0}'.format(n-1), xy=(0.97, 0.03),
+                    xycoords='axes fraction', horizontalalignment='right',
                     verticalalignment='bottom', color='k',
-                    backgroundcolor='white', fontsize=20)
-        return wspeed_plt
+                    backgroundcolor='white', fontsize=12)
+        ts = self.timeselect
+        ax.set_extent([lonn[ts] - 5, lonn[ts] + 5, latt[ts] - 5, latt[ts] + 5])
+        vvcontour = ax.contourf(X, Y, dataarray, levels=self.levelsvv,
+                                cmap=plt.cm.get_cmap('binary'), extend='both')
+        cbar_ax = fig.add_axes([0.92, 0.15, 0.05, 0.7])
+        cbar = fig.colorbar(vvcontour, cax=cbar_ax)
+        cbar.ax.set_title(r'$\mathregular{W/m^{2}}$')
+        newir = ir.regrid(irtemp, iris.analysis.Linear())
+        return newir
 
-    def t_const(self, yr, mm, dd, hr, d0, dN, t0, tN):
-        """t_const
-        Args:
-        Returns:
-        """
-        ltime = tct.checker(dd, hr, d0, dN, t0, tN)
-        if ltime is False:
-            return
-        tcon = iris.Constraint(time=iris.time.PartialDateTime(year=yr,
-                                                              month=mm, day=dd,
-                                                              hour=hr))
-        out = self.outfile_loc + self.outfile_name
-        outfile = out + '{0:02d}_{1:02d}Z.png'.format(dd, hr)
-        # Fix domain according to position of ensemble member 0,
-        # this assumes the position is similar in ensemble members
-        mmll = tct.find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
-                                  self.froot, self.fpat, self.domain_rad)
-        bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
-        return outfile[0], tcon, bcon, ltime
+    def finplot(self, newir, fig):
+        x2 = newir.coord('longitude').points
+        y2 = newir.coord('latitude').points
+        X2, Y2 = np.meshgrid(x2, y2)
+        ax = fig.add_subplot(4, 5, 19)
+        ax.imshow(image.imread(self.imfile))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        ax.annotate('IR', xy=(0.97, 0.03), xycoords='axes fraction',
+                    horizontalalignment='right', verticalalignment='bottom',
+                    color='k', backgroundcolor='white', fontsize=12)
+        plt.text(x=0.5, y=0.96, s="Outgoing long wave radiation",
+                 fontsize=18, ha="center", transform=fig.transFigure)
+        plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
+                 fontsize=12, ha="center", transform=fig.transFigure)
