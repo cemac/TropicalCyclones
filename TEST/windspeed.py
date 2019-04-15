@@ -25,15 +25,15 @@ Memebers:
 
 import numpy as np
 import iris
+import ast
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
-import ast
-from toolkit import *
+import toolkit as tct
 
 
-class windspeed(object):
-    '''StormStats
+class WindSpeed(object):
+    '''Windspeed
         Initialised extra varible and provides standard plots and
         plotting tools
 
@@ -49,7 +49,7 @@ class windspeed(object):
             stashfile (string): filepath to shashfile codes
         '''
         # Read configuration file to import settings
-        conf_df = pd.read_csv('configfile.csv')
+        conf_df = pd.read_csv(configfile + '.csv')
         # Define all constraints and locate data.
         self.data_loc = conf_df.data_loc[0]
         self.data_name = conf_df.data_name[0]
@@ -71,7 +71,7 @@ class windspeed(object):
         self.domain_rad = float(conf_df.domain_rad[0])
         print('Loaded configuration settings')
         # add stash codes
-        stash_df = pd.read_csv('stashvars.csv')
+        stash_df = pd.read_csv(stashfile + '.csv')
         u_stash = stash_df.u_stash[0]
         v_stash = stash_df.v_stash[0]
         self.slp_stash = stash_df.slp_stash[0]
@@ -81,21 +81,29 @@ class windspeed(object):
         self.fpat = conf_df.track_data_metadata[0]
         # Determine the dimensions of the stamp plot according to no members
         self.n_ems = len(self.ens_members)
-        self.nrows, self.ncols = find_subplot_dims(self.n_ems)
+        self.nrows, self.ncols = tct.find_subplot_dims(self.n_ems)
         self.p_constraint = iris.Constraint(pressure=self.plev)
         print('Loaded stash codes')
 
         # Plotting configuration
-        self.plot_df = pd.read_csv('plot_conf.csv')
+        self.plot_df = pd.read_csv(plotfile + '.csv')
         print('Loaded plot settings file')
 
     def loop(self):
-        for dd in self.vdays:
-            for hr in self.vtimes:
+        """loop
+        Args:
+        Returns:
+        """
+        for dd in self.v_days:
+            for hr in self.v_times:
                 self.dayhour(self.yr, self.mth, dd, hr, self.init_day,
                              self.final_day, self.init_time, self.final_time)
 
     def dayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
+        """dayhour
+        Args:
+        Returns:
+        """
         outfile, tcon, bcon, ltime = self.t_const(yr, mm, dd, hr, d0,
                                                   dN, t0, tN)
         if ltime is False:
@@ -108,12 +116,12 @@ class windspeed(object):
             ic = i % self.ncols
             ir = i / self.ncols
             if len(axs.shape) > 1:
-                ax = axs[ir, ic]
+                iric = [ir, ic]
+                ax = axs[iric]
             else:
                 ax = axs[ic]
-            llab, blab = label_fixer(i, self.ncols, self.nrows)
-            wspeed_plt = self.plot_i(ax, dd, hr, em, outfile, tcon, bcon,
-                                     ltime, llab, blab)
+            llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
+            wspeed_plt = self.plot_i(ax, em, tcon, bcon, llab, blab)
         # Reduce white space and then make whole figure bigger,
         # keeping the aspect ratio constant.
         plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
@@ -137,23 +145,27 @@ class windspeed(object):
         xy2 = [0.95, 0.925]
         string3 = 'T+{0}Z'.format(ltime)
         xy3 = [0.95, 0.9]
-        annotate(axs, string1, xy1)
-        annotate(axs, string2, xy2)
-        annotate(axs, string3, xy3)
+        tct.annotate(axs, string1, xy1)
+        tct.annotate(axs, string2, xy2)
+        tct.annotate(axs, string3, xy3)
         plt.savefig(outfile)
         plt.close()
 
-    def plot_i(s, ax, dd, hr, em, outfile, tcon, bcon, ltime, llab, blab):
+    def plot_i(self, ax, em, tcon, bcon, llab, blab):
+        """plot_i
+        Args:
+        Returns:
+        """
         # Load the data for this ensemble member at this time
         df = self.data_loc + self.data_name + '{0:02d}.pp'.format(em)
-        u = uv(df, self.u_constraint, tcon, self.p_constraint, bcon)
-        v = uv(df, self.v_constraint, tcon, self.p_constraint, bcon)
-        u, v, ws = winds(u, v, em)
-        wspeed_plt = plot_wspeed(ax, ws)
-        plot_winds(ax, u, v, self.model)
+        u = tct.uv(df, self.u_constraint, tcon, self.p_constraint, bcon)
+        v = tct.uv(df, self.v_constraint, tcon, self.p_constraint, bcon)
+        u, v, ws = tct.winds(u, v, em)
+        wspeed_plt = tct.plot_wspeed(ax, ws)
+        tct.plot_winds(ax, u, v, self.model)
         # Add grid lines and ticks etc.
-        map_formatter(ax, bottom_label=blab, left_label=llab, labelsize=20,
-                      tick_base_x=2, tick_base_y=2)
+        tct.map_formatter(ax, bottom_label=blab, left_label=llab, labelsize=20,
+                          tick_base_x=2, tick_base_y=2)
 
         # Annotate to add the ensemble member onto the plot
         ax.annotate('{0:02d}'.format(em), xy=(0.97, 0.03),
@@ -163,8 +175,12 @@ class windspeed(object):
                     backgroundcolor='white', fontsize=20)
         return wspeed_plt
 
-    def t_const(s, yr, mm, dd, hr, d0, dN, t0, tN):
-        ltime = checker(dd, hr, d0, dN, t0, tN)
+    def t_const(self, yr, mm, dd, hr, d0, dN, t0, tN):
+        """t_const
+        Args:
+        Returns:
+        """
+        ltime = tct.checker(dd, hr, d0, dN, t0, tN)
         if ltime is False:
             return
         tcon = iris.Constraint(time=iris.time.PartialDateTime(year=yr,
@@ -174,7 +190,7 @@ class windspeed(object):
         outfile = out + '{0:02d}_{1:02d}Z.png'.format(dd, hr)
         # Fix domain according to position of ensemble member 0,
         # this assumes the position is similar in ensemble members
-        mmll = find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
-                              self.froot, self.fpat, self.domain_rad)
-        bcon = box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
+        mmll = tct.find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
+                                  self.froot, self.fpat, self.domain_rad)
+        bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
         return outfile[0], tcon, bcon, ltime
