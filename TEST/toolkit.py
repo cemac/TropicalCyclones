@@ -173,6 +173,20 @@ def box_constraint(minlat, maxlat, minlon, maxlon):
         longitude=lambda cell: cell < maxlon)
     latitude_constraint1 = iris.Constraint(latitude=lambda cell: cell > minlat)
     latitude_constraint2 = iris.Constraint(latitude=lambda cell: cell < maxlat)
-    tc_box_constraint = (longitude_constraint1 & longitude_constraint2 &
-                      latitude_constraint1 & latitude_constraint2)
+    tc_box_constraint = (longitude_constraint1 & longitude_constraint2
+                         & latitude_constraint1 & latitude_constraint2)
     return tc_box_constraint
+
+
+def calculate_pot_temp(pressure, temperature):
+    return temperature * (1000 / pressure)**(0.286)
+
+
+def calc_grad(data, dx):
+    # Basic central differencing
+    # Data should be 1-d
+    grad = np.zeros(data.shape)
+    grad[0] = (1 / dx) * (data[1] - data[0])
+    grad[-1] = (1 / dx) * (data[-1] - data[-2])
+    grad[1:-1] = (1 / (2 * dx)) * (data[2:] - data[:-2])
+    return grad
