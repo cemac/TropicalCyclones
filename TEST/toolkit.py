@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""toolkit
+"""ToolKit
 
-.. module:: toolkit
+.. module:: ToolKit
     :platform: Unix
     :synopis: Standalone tools
 

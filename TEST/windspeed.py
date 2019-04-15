@@ -33,7 +33,7 @@ import toolkit as tct
 
 
 class WindSpeed(object):
-    '''Windspeed
+    '''WindSpeed
         Initialised extra varible and provides standard plots and
         plotting tools
 
