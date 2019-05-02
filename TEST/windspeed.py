@@ -26,10 +26,21 @@ Memebers:
 import numpy as np
 import iris
 import ast
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
 import toolkit as tct
+# University System python may be broken
+# If some one insists on using it...
+backend = mpl.get_backend()
+if backend == 'Qt4Agg' and sys.version_info[0] == 2:
+    # Fix the backend
+    print('swapping to Agg Backend')
+    print('Please consider using anaconda')
+    mpl.use('Agg')
+# DO NOT MOVE ABOVE BACKEND FIX
+import matplotlib.pyplot as plt # KEEP ME HERE!!!
 
 
 class WindSpeed(object):
@@ -42,7 +53,7 @@ class WindSpeed(object):
     '''
 
     def __init__(self, configfile='configfile', stashfile='stashvars',
-                 plotfile='plotconf'):
+                 plotfile='plot_conf'):
         '''
         Args:
             configfile (string): filepath to configuration settings
@@ -51,7 +62,14 @@ class WindSpeed(object):
         # Read configuration file to import settings
         conf_df = pd.read_csv(configfile + '.csv')
         # Define all constraints and locate data.
-        self.data_loc = conf_df.data_loc[0]
+        self.data_root = conf_df.data_root[0]
+        Storm = conf_df.Storm[0]
+        suitno = conf_df.suitno[0]
+        run = conf_df.run[0]
+        mmdd_hr = conf_df.mmdd_hr[0]
+        var = conf_df.vars[0]
+        self.data_loc = (self.data_root + '/' + Storm + '/' + suitno + '/' +
+                         run + '/' + mmdd_hr + '/' + var)
         self.data_name = conf_df.data_name[0]
         self.outfile_loc = conf_df.outfile_loc[0]
         self.outfile_name = conf_df.outfile_name .values
@@ -104,11 +122,12 @@ class WindSpeed(object):
         Args:
         Returns:
         """
-        outfile, tcon, bcon, ltime = self.t_const(yr, mm, dd, hr, d0,
-                                                  dN, t0, tN)
-        if ltime is False:
+
+        outtest = self.t_const(yr, mm, dd, hr, d0, dN, t0, tN)
+        if outtest is None:
             return
         # Create figure
+        outfile, tcon, bcon, ltime = outtest
         fig, axs = plt.subplots(self.nrows, self.ncols, dpi=100, subplot_kw={
                                 'projection': ccrs.PlateCarree()})
         for i, em in enumerate(self.ens_members):
@@ -116,8 +135,7 @@ class WindSpeed(object):
             ic = i % self.ncols
             ir = i / self.ncols
             if len(axs.shape) > 1:
-                iric = [ir, ic]
-                ax = axs[iric]
+                ax = axs[ir][ic]
             else:
                 ax = axs[ic]
             llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
@@ -182,6 +200,7 @@ class WindSpeed(object):
         """
         ltime = tct.checker(dd, hr, d0, dN, t0, tN)
         if ltime is False:
+            print('skipping')
             return
         tcon = iris.Constraint(time=iris.time.PartialDateTime(year=yr,
                                                               month=mm, day=dd,
@@ -192,5 +211,8 @@ class WindSpeed(object):
         # this assumes the position is similar in ensemble members
         mmll = tct.find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
                                   self.froot, self.fpat, self.domain_rad)
+        if mmll is False:
+            print('skipping')
+            return
         bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
         return outfile[0], tcon, bcon, ltime

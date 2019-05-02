@@ -5,6 +5,7 @@ John Ashcroft, February 2019.
 
 import numpy as np
 import iris
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import matplotlib
@@ -13,6 +14,17 @@ import matplotlib.ticker as mticker
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.cm as mpl_cm
+# University System python may be broken
+# If some one insists on using it...
+backend = mpl.get_backend()
+if backend == 'Qt4Agg' and sys.version_info[0] == 2:
+    # Fix the backend
+    print('swapping to Agg Backend')
+    print('Please consider using anaconda')
+    mpl.use('Agg')
+# DO NOT MOVE ABOVE BACKEND FIX
+import matplotlib.pyplot as plt  # KEEP ME HERE!!!
+################################
 
 
 def main():
@@ -20,7 +32,7 @@ def main():
     data_loc = '/nfs/a37/scjea/model_runs/Hagupit/u-ap087/data/4p4/1203_12Z/wind_plev/'
     # Should include everything but 'NN.pp' where NN is the ensemble member.
     data_name = 'uvplev_4p4_1203_12Z_em'
-    outfile_loc = './'
+    outfile_loc = './windspeed_plots/'
     # time data to be added to the outfile
     outfile_name = 'wspeed_1203_12Z_4p4_850hPa_'
 

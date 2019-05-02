@@ -25,6 +25,9 @@ import numpy as np
 import iris
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 
@@ -158,10 +161,13 @@ def find_centre_3h(md, TT, em, v_day, v_time, mod, froot, fpat, dom_r):
     index2 = np.where(times == v_time)
     cenlat = lats[index2]
     cenlon = lons[index2]
-    minlat = cenlat[0] - dom_r
-    maxlat = cenlat[0] + dom_r
-    minlon = cenlon[0] - dom_r
-    maxlon = cenlon[0] + dom_r
+    try:
+        minlat = cenlat[0] - dom_r
+        maxlat = cenlat[0] + dom_r
+        minlon = cenlon[0] - dom_r
+        maxlon = cenlon[0] + dom_r
+    except IndexError:
+        return False
     return minlat, maxlat, minlon, maxlon
 
 
@@ -192,7 +198,7 @@ def calc_grad(data, dx):
     return grad
 
 
-def extracter(fload, minlon, minlat, minlat, maxlat):
+def extracter(fload, minlon, maxlon, minlat, maxlat):
     ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
                        < maxlon, latitude=lambda cell: minlat < cell < maxlat))
     return ir

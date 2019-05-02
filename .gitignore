@@ -3,3 +3,4 @@
 .spyproject
 *__pycache__/
 *.pyc
+TEST/*/Speed_Tests/**.csv

@@ -9,7 +9,7 @@
     Speed2:
 """
 
-import windspeed
+import OLR
 
-c = windspeed.windspeed()
+c = OLR.OLR()
 c.dayhour(2014, 12, 04, 18, c.init_day, c.final_day, c.init_time, c.final_time)
