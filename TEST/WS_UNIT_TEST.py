@@ -4,7 +4,8 @@
 
     Notes:
         Very slow
-    Speed1:
+        Original test didn't work for all cases...
+    Speed1: 24 mins
     Updates:
     Speed2:
 """
