@@ -1,5 +1,0 @@
-starting
-Loaded configuration settings
-Loaded stash codes
-Loaded plot settings file
-Plotting data for dd = 3, hr = 0
