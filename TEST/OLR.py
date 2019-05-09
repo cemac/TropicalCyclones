@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+import matplotlib.image as image
+import cPickle as pickle
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib.ticker as mticker
+import pandas as pd
+import ast
+import iris.analysis.calculus
+import toolkit as tct
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
 """ORL
 
 .. module:: ORL
@@ -28,16 +38,6 @@ import iris
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import toolkit as tct
-import iris.analysis.calculus
-import ast
-import pandas as pd
-import matplotlib.ticker as mticker
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import cPickle as pickle
-import matplotlib.image as image
 
 
 class OLR(object):
@@ -47,55 +47,44 @@ class OLR(object):
 
     '''
 
-    def __init__(self, configfile='configfile', imfile='20170904IRMA.png'):
+    def __init__(self, imfile='20170903IRMA.png'):
         '''
         Args:
             timeselect (int): number of hours after run
             stashfile (string): filepath sat image
         '''
         # Read configuration file to import settings
-        conf_df = pd.read_csv(configfile + '.csv')
+        self.olrhome = '/nfs/a319/ee16wst/OLR/'
         self.timeselect = 14
-        self.levelsvv = ((np.arange(25)) * 10) + 100
-        self.imfile = imfile
+        self.imfile = self.olrhome + imfile
         self.root = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp"
-        self.v_times = ast.literal_eval(conf_df.v_times[0])
-        self.init_day = int(conf_df.init_day[0])
-        self.final_day = int(conf_df.final_day[0])
-        self.v_days = np.arange(self.init_day, self.init_day + 6, 1)
-        self.yr = int(conf_df.yr[0])
-        self.mth = int(conf_df.mth[0])
-        self.data = "/nfs/a299/TCs/irma/IRMA_0906_12Z_ra1t_em00_pa.pp"
-        f = iris.load(self.data)
-        cube = f[1]
-        self.latt = cube.coord('latitude').points
-        self.lonn = cube.coord('longitude').points
+        self.levelsvv = ((np.arange(25)) * 10) + 100
 
     def loop(self):
         """loop
         Args:
         Returns:
         """
-        for dd in self.v_days:
-            for hr in self.v_times:
-                newir, fig = self.plots_loop(dd, hr)
+        newir, fig = self.plots_loop(self.timeselect)
         self.finplot(newir, fig)
 
-    def plots_loop(self, day, time):
+    def plots_loop(self, time):
         """loop
         Args:
         Returns:
         """
-        lonn = self.lonn
-        latt = self.latt
         fig = plt.figure(figsize=(15, 12))
         for i in range(18):
-            filename = self.root.format(i, day, time)
+            filename = self.olrhome + "olralle{0}.pp".format(i)
             ir = iris.load(filename)[0][0]
-            minlon = float(lonn[self.timeselect] - 5)
-            maxlon = float(lonn[self.timeselect] + 5)
-            minlat = float(latt[self.timeselect] - 5)
-            maxlat = float(latt[self.timeselect] + 5)
+            with open(self.olrhome + 'late{0:02}.pkl'.format(i), "rb") as fp:
+                latt = np.asarray(pickle.load(fp))
+            with open(self.olrhome + 'lone{0:02}.pkl'.format(i), "rb") as fp:
+                lonn = np.asarray(pickle.load(fp))
+            minlon = float(lonn[time] - 5)
+            maxlon = float(lonn[time] + 5)
+            minlat = float(latt[time] - 5)
+            maxlat = float(latt[time] + 5)
             if i == 0:
                 ir_temp = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
             ir = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
@@ -112,7 +101,7 @@ class OLR(object):
         x = ir.coord('longitude').points
         y = ir.coord('latitude').points
         X, Y = np.meshgrid(x, y)
-        ax = fig.add_subplot(4, 5, n, projection=ccrs.PlateCarree())
+        ax = fig.add_subplot(4, 5, n+1, projection=ccrs.PlateCarree())
         gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                           linewidth=1, color='k', linestyle=':')
         gl.xlabels_top = False
@@ -124,7 +113,7 @@ class OLR(object):
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         ax.coastlines(resolution='10m', color='k', linewidth=1)
-        ax.annotate('P{0}'.format(n-1), xy=(0.97, 0.03),
+        ax.annotate('Em {0}'.format(n - 1), xy=(0.97, 0.03),
                     xycoords='axes fraction', horizontalalignment='right',
                     verticalalignment='bottom', color='k',
                     backgroundcolor='white', fontsize=12)
@@ -142,7 +131,7 @@ class OLR(object):
         x2 = newir.coord('longitude').points
         y2 = newir.coord('latitude').points
         X2, Y2 = np.meshgrid(x2, y2)
-        ax = fig.add_subplot(4, 5, 19)
+        ax = fig.add_subplot(4, 5, 1)
         ax.imshow(image.imread(self.imfile))
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
@@ -154,3 +143,4 @@ class OLR(object):
         plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
                  fontsize=12, ha="center", transform=fig.transFigure)
         plt.savefig('test.png')
+        plt.close()
