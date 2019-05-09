@@ -13,6 +13,10 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import iris.plot as qplt
 import cPickle as pickle
 import matplotlib.image as image
+import time
+
+
+olrhome = '/nfs/a319/ee16wst/OLR/'
 
 
 def calculate_pot_temp(pressure, temperature):
@@ -46,14 +50,14 @@ def main():
     dataarray = np.zeros((750, 1000))
     meandataarray = np.zeros((250, 249))
     for i in range(18):
-        with open('late{0:02}.pkl'.format(i), "rb") as fp:
+        with open(olrhome+'late{0:02}.pkl'.format(i), "rb") as fp:
             latt = np.asarray(pickle.load(fp))
 
-        with open('lone{0:02}.pkl'.format(i), "rb") as fp:
+        with open(olrhome+'lone{0:02}.pkl'.format(i), "rb") as fp:
             lonn = np.asarray(pickle.load(fp))
 
         # lonn=lonn-360
-        filename = "olralle{0}.pp".format(i)
+        filename = olrhome+"olralle{0}.pp".format(i)
         # filename2 = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp".format(i,day,time)
 
         # print(iris.load(filename))
@@ -167,7 +171,7 @@ def main():
     # ax.set_title("Storm relative mean",fontsize=8)
 
     ax = fig.add_subplot(4, 5, 19)
-    ax.imshow(image.imread("20170903IRMA.png"))
+    ax.imshow(image.imread(olrhome+"20170903IRMA.png"))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     # ax.set_title("Visible Satellite",fontsize=8)
@@ -192,8 +196,12 @@ def main():
     plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
              fontsize=12, ha="center", transform=fig.transFigure)
     # plt.suptitle("Outgoing long wave radiation ($W/m^2$) at {0}:00".format(timeselect,plev))
-    plt.show()
+    plt.savefig('origout.png')
 
 
 if __name__ == '__main__':
+    print('starting')
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print('ending')

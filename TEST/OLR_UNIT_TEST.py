@@ -12,4 +12,4 @@
 import OLR
 
 c = OLR.OLR()
-c.dayhour(2014, 12, 04, 18, c.init_day, c.final_day, c.init_time, c.final_time)
+c.loop()

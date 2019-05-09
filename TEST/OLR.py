@@ -6,7 +6,7 @@
     :synopis: Produces a simple stamp plot of ORL for an ensemble of size
               N
 
-.. moduleauthor: John Ashcroft, CEMAC (UoL) February 2019.
+.. moduleauthor: Will Torgerson, Helen Burns CEMAC (UoL) February 2019.
 
 .. description: This module was developed by CEMAC as part of the WCSSP
                 Project. Intial script improvements
@@ -25,6 +25,9 @@ Memebers:
 
 import numpy as np
 import iris
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import toolkit as tct
@@ -37,14 +40,14 @@ import cPickle as pickle
 import matplotlib.image as image
 
 
-class ORL(object):
-    '''ORL
+class OLR(object):
+    '''OLR
 
     Members:
 
     '''
 
-    def __init__(self, configfile='configfile', imfile='20170903IRMA.png'):
+    def __init__(self, configfile='configfile', imfile='20170904IRMA.png'):
         '''
         Args:
             timeselect (int): number of hours after run
@@ -52,7 +55,7 @@ class ORL(object):
         '''
         # Read configuration file to import settings
         conf_df = pd.read_csv(configfile + '.csv')
-        self.timeselect = conf_df.timeselect[0]
+        self.timeselect = 14
         self.levelsvv = ((np.arange(25)) * 10) + 100
         self.imfile = imfile
         self.root = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp"
@@ -150,3 +153,4 @@ class ORL(object):
                  fontsize=18, ha="center", transform=fig.transFigure)
         plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
                  fontsize=12, ha="center", transform=fig.transFigure)
+        plt.savefig('test.png')
