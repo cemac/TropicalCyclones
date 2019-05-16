@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 """hovmoller plots
 
 .. module:: hov test
@@ -40,6 +39,7 @@ if backend == 'Qt4Agg' and sys.version_info[0] == 2:
     print('Please consider using anaconda')
     mpl.use('Agg')
 # DO NOT MOVE ABOVE BACKEND FIX
+import matplotlib.pyplot as plt  # KEEP ME HERE!!
 
 
 class hovmoller(object):

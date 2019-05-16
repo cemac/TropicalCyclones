@@ -30,6 +30,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 
 
 def checker(dd, hr, d0, dN, t0, tN):
