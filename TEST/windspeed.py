@@ -215,4 +215,4 @@ class WindSpeed(object):
             print('skipping')
             return
         bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
-        return outfile[0], tcon, bcon, ltime
+        return outfile, tcon, bcon, ltime

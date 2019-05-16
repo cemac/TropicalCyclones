@@ -217,7 +217,6 @@ def load_ens_members(em, fpath, x0, y0):
     ranges = np.arange(0, 500, 5)
     phis = np.arange(0, 2 * np.pi, phi_interval)
     df = fpath + '{0:02d}.pp'.format(em)
-    print(df)
     u = iris.load_cube(df, data_constraint1).extract(p_constraint)
     v = iris.load_cube(df, data_constraint2).extract(p_constraint)
 
@@ -290,8 +289,7 @@ def max_vals(cube):
 
 def plot_hovmoller(v_azi, outfile):
     ranges = np.arange(0, 500, 5)
-    fig = plt.figure()
-
+    fig = plt.figure(figsize=(8,12))
     data = v_azi[0]
     data = np.swapaxes(data, 0, 1)
     times = np.arange(41)
@@ -299,12 +297,14 @@ def plot_hovmoller(v_azi, outfile):
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel('Radius (km)', fontsize=18)
     ax.set_ylabel('Forecast time (Z)', fontsize=18)
-    hovmol = ax.pcolormesh(ranges, times, data, cmap='jet')
+    #hovmol = ax.pcolormesh(ranges, times, data, cmap='jet')
+    hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
+    # Contour mean tangential wind
     cbar = plt.colorbar(hovmol)
     cbar.set_label('Azimuthal velocity (ms$^{-1}$)', size=14)
     cbar.ax.tick_params(labelsize=14)
     # plt.show()
-    plt.savefig(outfile, dpi=500)
+    plt.savefig(outfile)
     plt.close()
 
 

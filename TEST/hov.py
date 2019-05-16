@@ -26,7 +26,6 @@ import numpy as np
 import iris
 import ast
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
 import toolkit as tct
@@ -96,17 +95,19 @@ class hovmoller(object):
         ofile = 'plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_em{2:02d}.png'
         for md in [self.md]:
             for TT in [self.TT]:
-                fpath = self.data_loc.format(
-                    md, TT) + self.data_name.format(md, TT)
                 for em in self.ens_members:
-                    outfile = ofile.format(md, TT, em)
-                    filepath = self.froot + \
+                    self.hovplotter(md, TT, em, ofile)
+
+    def hovplotter(self, md, TT, em, ofile):
+        fpath = self.data_loc.format(md, TT) + self.data_name.format(md, TT)
+        outfile = ofile.format(md, TT, em)
+        filepath = self.froot + \
                         '_4p4_{0:04d}_{1:02d}Z_en{2:02d}.npz'.format(
                             md, TT, em)
-                    track_data = np.load(filepath)
-                    lats = track_data['lats']
-                    lons = track_data['lons']
-                    [y0, x0] = [lats, lons]  # centre of storm
-                    df = fpath + '{0:02d}.pp'.format(em)
-                    v_azi_list = tct.load_ens_members(em, fpath, x0, y0)
-                    tct.plot_hovmoller(v_azi_list, outfile)
+        track_data = np.load(filepath)
+        lats = track_data['lats']
+        lons = track_data['lons']
+        [y0, x0] = [lats, lons]  # centre of storm
+        df = fpath + '{0:02d}.pp'.format(em)
+        v_azi_list = tct.load_ens_members(em, fpath, x0, y0)
+        tct.plot_hovmoller(v_azi_list, outfile)
