@@ -1,0 +1,3 @@
+var:,mmdd,time,no_members
+val:,1203,12,12 
+des:,month day,hour,number of ensemble members,
