@@ -296,11 +296,12 @@ def plot_hovmoller(v_azi, outfile):
     fig = plt.figure(1)
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel('Radius (km)', fontsize=18)
-    ax.set_ylabel('Forecast time (Z)', fontsize=18)
+    ax.set_ylabel('Forecast time', fontsize=18)
     #hovmol = ax.pcolormesh(ranges, times, data, cmap='jet')
     hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
-    cbar = plt.colorbar(hovmol)
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
     cbar.set_label('Azimuthal velocity (ms$^{-1}$)', size=14)
     cbar.ax.tick_params(labelsize=14)
     # plt.show()

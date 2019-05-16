@@ -152,7 +152,7 @@ class WindSpeed(object):
                             orientation='horizontal', extend='both',
                             fraction=0.046, pad=0.09)
         cbar.ax.tick_params(labelsize=18)
-        cbar.set_label('ms$^{-1}$', size=18)
+        cbar.set_label(str(self.plev) + 'hPa WindSpeed (ms$^{-1}$)', size=18)
         axs = fig.gca()
         string1 = ('Initial time: {0}/{1}/{2}, {3:02d}'
                    + 'Z').format(str(self.md)[-2:], str(self.md)[:2],
