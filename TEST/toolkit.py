@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import matplotlib.cm as mpl_cm
+import matplotlib.ticker as mticker
 """ToolKit
 
 .. module:: ToolKit
@@ -28,8 +30,6 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
-import matplotlib.ticker as mticker
-import matplotlib.cm as mpl_cm
 
 
 def checker(dd, hr, d0, dN, t0, tN):
@@ -200,8 +200,9 @@ def calc_grad(data, dx):
 
 def extracter(fload, minlon, maxlon, minlat, maxlat):
     ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
-                       < maxlon, latitude=lambda cell: minlat < cell < maxlat))
+                                       < maxlon, latitude=lambda cell: minlat < cell < maxlat))
     return ir
+
 
 def load_ens_members(em, fpath, x0, y0):
     md = 1203
@@ -215,6 +216,7 @@ def load_ens_members(em, fpath, x0, y0):
     ranges = np.arange(0, 500, 5)
     phis = np.arange(0, 2 * np.pi, phi_interval)
     df = fpath + '{0:02d}.pp'.format(em)
+    print(df)
     u = iris.load_cube(df, data_constraint1).extract(p_constraint)
     v = iris.load_cube(df, data_constraint2).extract(p_constraint)
 
@@ -238,9 +240,7 @@ def load_ens_members(em, fpath, x0, y0):
         vrt = calc_vrt_spherical(u_box, v_box)
         cenlat, cenlon, max_val = max_vals(vrt)
         for r in ranges:
-            #print r
             for phi in phis:
-                #print phi
                 xpoi = cenlon + 0.009 * r * np.cos(phi)  # Check the 0.009
                 ypoi = cenlat + 0.009 * r * np.sin(phi)
                 new_point = [('latitude', ypoi), ('longitude', xpoi)]
@@ -263,7 +263,6 @@ def load_ens_members(em, fpath, x0, y0):
             else:
                 Vazi = np.append(Vazi, np.mean(vazi))
                 Urad = np.append(Urad, np.mean(urad))
-        #print i
         if i == 0:
             v_azi_all = Vazi
             u_rad_all = Urad
@@ -294,8 +293,6 @@ def plot_hovmoller(v_azi, outfile):
 
     data = v_azi[0]
     data = np.swapaxes(data, 0, 1)
-    #print ranges.shape
-    #print data.shape
     times = np.arange(41)
     fig = plt.figure(1)
     ax = fig.add_subplot(1, 1, 1)
@@ -308,3 +305,46 @@ def plot_hovmoller(v_azi, outfile):
     # plt.show()
     plt.savefig(outfile, dpi=500)
     plt.close()
+
+
+def calc_vrt_spherical(u, v):
+    # Calculates vorticity in spherical coordinates using the following:
+    # omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
+    # u, v cubes on one vertical level
+
+    lats = u.coord('latitude').points
+    lons = u.coord('longitude').points
+    LONS, LATS = np.meshgrid(lons, lats)
+
+    a = 6371000.  # Radius of Earth
+    ddeg = abs(lats[1] - lats[0])
+    drad = np.pi * ddeg / 180.  # Grid spacing (assumed constant)
+
+    # Calculate dv/dlon, i.e. for each latitude
+    for i in np.arange(len(u.data)):
+        dvdlon = calc_grad(v.data[i, :], drad)
+        if i == 0:
+            v_lon = dvdlon
+        else:
+            v_lon = np.vstack((v_lon, dvdlon))
+
+    lats_rad = LATS * np.pi / 180.
+    ucoslat = u.data * np.cos(lats_rad)
+
+    # Calculate d(u sin(lat))/dlat, i.e. for each lon
+    for i in np.arange(len(u.data[0])):
+        dudlat = calc_grad(ucoslat[:, i], drad)
+        if i == 0:
+            u_lat = dudlat
+        else:
+            u_lat = np.vstack((u_lat, dudlat))
+    u_lat = np.swapaxes(u_lat, 0, 1)
+
+    vrt = u[:]
+    vrt.data = (1 / (a * np.cos(lats_rad))) * (v_lon - u_lat)
+    vrt.units = 's-1'
+    vrt.standard_name = 'atmosphere_relative_vorticity'
+    vrt.long_name = 'Calculated using spherical coordinates finite difference'
+    vrt.attributes = {
+        'source': 'Calculated using (u,v) from Met Office Unified Model', 'um_version': '10.6'}
+    return vrt

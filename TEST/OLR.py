@@ -101,7 +101,7 @@ class OLR(object):
         x = ir.coord('longitude').points
         y = ir.coord('latitude').points
         X, Y = np.meshgrid(x, y)
-        ax = fig.add_subplot(4, 5, n+1, projection=ccrs.PlateCarree())
+        ax = fig.add_subplot(4, 5, n + 1, projection=ccrs.PlateCarree())
         gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                           linewidth=1, color='k', linestyle=':')
         gl.xlabels_top = False
