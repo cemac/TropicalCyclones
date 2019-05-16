@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import matplotlib.cm as mpl_cm
-import matplotlib.ticker as mticker
 """ToolKit
 
 .. module:: ToolKit
@@ -31,6 +29,8 @@ import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # KEEP ME HERE!!!
+import matplotlib.cm as mpl_cm
+import matplotlib.ticker as mticker
 
 
 def checker(dd, hr, d0, dN, t0, tN):

@@ -27,7 +27,6 @@ import numpy as np
 import iris
 import ast
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
 import toolkit as tct
@@ -72,7 +71,7 @@ class WindSpeed(object):
                          run + '/' + mmdd_hr + '/' + var)
         self.data_name = conf_df.data_name[0]
         self.outfile_loc = conf_df.outfile_loc[0]
-        self.outfile_name = conf_df.outfile_name .values
+        self.outfile_name = conf_df.outfile_name.values
         self.ens_members = np.arange(int(conf_df.ens_members[0]))
         self.plev = int(conf_df.plev[0])
         self.md = int(conf_df.md[0])
@@ -101,6 +100,7 @@ class WindSpeed(object):
         self.n_ems = len(self.ens_members)
         self.nrows, self.ncols = tct.find_subplot_dims(self.n_ems)
         self.p_constraint = iris.Constraint(pressure=self.plev)
+        self.df = self.data_loc.format(self.md, self.TT) + self.data_name.format(self.md, self.TT)
         print('Loaded stash codes')
 
         # Plotting configuration
@@ -139,7 +139,7 @@ class WindSpeed(object):
             else:
                 ax = axs[ic]
             llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
-            wspeed_plt = self.plot_i(ax, em, tcon, bcon, llab, blab)
+            wspeed_plt = self.plot_i(ax, self.df, em, tcon, bcon, llab, blab)
         # Reduce white space and then make whole figure bigger,
         # keeping the aspect ratio constant.
         plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
@@ -169,13 +169,13 @@ class WindSpeed(object):
         plt.savefig(outfile)
         plt.close()
 
-    def plot_i(self, ax, em, tcon, bcon, llab, blab):
+    def plot_i(self, ax, fpat, em, tcon, bcon, llab, blab):
         """plot_i
         Args:
         Returns:
         """
+        df = fpat + '{0:02d}.pp'.format(em)
         # Load the data for this ensemble member at this time
-        df = self.data_loc + self.data_name + '{0:02d}.pp'.format(em)
         u = tct.uv(df, self.u_constraint, tcon, self.p_constraint, bcon)
         v = tct.uv(df, self.v_constraint, tcon, self.p_constraint, bcon)
         u, v, ws = tct.winds(u, v, em)
@@ -205,8 +205,8 @@ class WindSpeed(object):
         tcon = iris.Constraint(time=iris.time.PartialDateTime(year=yr,
                                                               month=mm, day=dd,
                                                               hour=hr))
-        out = self.outfile_loc + self.outfile_name
-        outfile = out + '{0:02d}_{1:02d}Z.png'.format(dd, hr)
+        out = self.outfile_loc + 'wind/' + self.outfile_name[0] + '.png'
+        outfile = out.format(dd, hr)
         # Fix domain according to position of ensemble member 0,
         # this assumes the position is similar in ensemble members
         mmll = tct.find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
