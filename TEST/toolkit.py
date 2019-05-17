@@ -34,6 +34,19 @@ import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 
 
 def checker(dd, hr, d0, dN, t0, tN):
+    """checker
+    Description:
+        Check in correct time critera depending on set start and end time.
+    Args:
+        dd(int): day
+        hr(int): hour
+        d0(int): init day
+        dN(int): end day
+        t0(int): init hour
+        tN(int): end hour
+    Return:
+        lead_time (int) or lead_time .false.
+    """
     if dd < d0 or (dd == d0 and hr < t0 + 1):
         lead_time = False
     if dd > dN or (dd > dN - 1 and hr > tN - 1):
@@ -43,18 +56,51 @@ def checker(dd, hr, d0, dN, t0, tN):
 
 
 def find_subplot_dims(n):
+    """find_subplot_dims
+    Description:
+        Automatic format subplots for given number of plots
+    Args:
+        n (int): number of ensemble members
+    Return:
+        n_rows (int): number of rows
+        n_cols (int): number of columns
+    """
     n_cols = np.ceil(n**0.5).astype(int)
     n_rows = np.ceil(1. * n / n_cols).astype(int)
     return n_rows, n_cols
 
 
 def uv(df, u_cons, t_cons, p_cons, b_cons):
+    """uv
+    Description:
+        Extract velocity field under constants
+    Args:
+        df (str): file name
+        u_cons (iris constraint): velocity constraint
+        t_cons (iris constraint): temporal constraint (set by time_const)
+        p_cons (iris constraint): pressure constraint
+        b_cons (iris constraint): box constraint (set by box_constraint)
+    Return:
+        u (iris cube): velocity field matching constraints
+    """
     with iris.FUTURE.context(cell_datetime_objects=True):
         u = iris.load_cube(df, u_cons).extract(t_cons & p_cons & b_cons)
     return u
 
 
 def winds(u, v, em):
+    """winds
+    Description:
+        Create cube of WindSpeeds for all ensemble members
+    Args:
+        u (iris cube): zonal velocity cube (produced by uv)
+        v (iris cube): meridional velocity cube (produced by uv)
+        em (int): ensemble member number
+    Return:
+        u (iris cube): zonal velocity cube with assigned em member
+        v (iris cube): meridional velocity cube with assigned em member
+        ws (iris cube): windspeed cube with assigned em member
+    """
     ws = (u**2 + v**2)**0.5
     coord = iris.coords.AuxCoord(em, long_name='ensemble_member')
     u.add_aux_coord(coord)
@@ -64,6 +110,16 @@ def winds(u, v, em):
 
 
 def annotate(axs, StringFormat, xy):
+    """annotate
+    Description:
+        Create cube of WindSpeeds for all ensemble members
+    Args:
+        axs (fig axes): figure axes
+        StringFormat (str): Regex string
+        xy:
+    Return:
+        Adds annoation to axs
+    """
     # Add initial time, valid time etc.
     axs.annotate(StringFormat, xy=xy, xycoords='figure fraction',
                  horizontalalignment='right', verticalalignment='top',
@@ -71,6 +127,17 @@ def annotate(axs, StringFormat, xy):
 
 
 def label_fixer(i, ncols, nrows):
+    """label_fixer
+    Description:
+        Create cube of WindSpeeds for all ensemble members
+    Args:
+        i (int): plot number (iterable)
+        ncols (int): number of columns from find_subplot_dims
+        nrows (int): number of rows from find_subplot_dims
+    Return:
+        left_label (str): left labels
+        bottom_label (str): bottom labes
+    """
     # Make sure only the outside axis are labelled
     if i % ncols != 0:
         left_label = False
@@ -84,18 +151,37 @@ def label_fixer(i, ncols, nrows):
 
 
 def plot_wspeed(ax, ws):
+    """plot_wspeed
+    Description:
+        Plot WindSpeed
+    Args:
+        axs (fig axes): figure axes
+        ws (iris cube): windspeed cube
+    Return:
+        wspeed (figure): WindSpeed contourf plot
+    """
     levels = np.arange(11) * 5
     cmap = mpl_cm.get_cmap('plasma')
     x = ws.coord('longitude').points
     y = ws.coord('latitude').points
     X, Y = np.meshgrid(x, y)
-
     wspeed = ax.contourf(X, Y, ws.data, cmap=cmap,
                          levels=levels, extend='both')
     return wspeed
 
 
 def plot_winds(ax, u, v, mod):
+    """plot_winds
+    Description:
+        Plot quiver of wind field
+    Args:
+        axs (fig axes): figure axes
+        u (iris cube): windspeed cube
+        v (iris cube): windspeed cube
+        mod (str): model
+    Return:
+        wspeed (figure)
+    """
     if mod == '4p4':
         scale = 300.
         step = 12
@@ -119,9 +205,15 @@ def plot_winds(ax, u, v, mod):
 def map_formatter(ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
                   top_label=False, bottom_label=True, right_label=False,
                   left_label=True, res='10m'):
-    '''
-    Adds gridlines, countries and lat/lon labels to the plot.
-    '''
+    """map_formatter
+    Description:
+        Adds gridlines, countries and lat/lon labels to the plot.
+    Args:
+        axs (fig axes): figure axes
+        params: preset but adjustable
+    Return:
+        fig with gridlines added
+    """
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                       linewidth=0.75, color='k', linestyle=':')
     gl.xlabels_top = top_label
@@ -138,12 +230,25 @@ def map_formatter(ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
 
 
 def find_centre_3h(md, TT, em, v_day, v_time, mod, froot, fpat, dom_r):
-    '''
-    Loads the track data for a specific time. This function is tailored to my
-    own data, will have to be rewritten depending on how the users track data
+    """find_centre_3h
+    Description:
+    Loads the track data for a specific time. This function is tailored to johns
+    data, will have to be rewritten depending on how the users track data
     is stored. If you want just a single domain simply create a function that
     returns the centre of this domain.
-    '''
+    Args:
+        md(int): day
+        TT(int): hour
+        em(int): ensemble number
+        v_day(list): list of days
+        v_time (list): list of times
+        mod (str): model
+        froot (str): file path
+        fpat (str): regex filename pattern
+        dom_r (float):
+    Return:
+        minlat, maxlat, minlon, maxlon: box domain
+    """
     if mod == 'glm':
         fpatfull = froot + '_newinterp_' + fpat
     else:
@@ -172,6 +277,17 @@ def find_centre_3h(md, TT, em, v_day, v_time, mod, froot, fpat, dom_r):
 
 
 def box_constraint(minlat, maxlat, minlon, maxlon):
+    """box_constraint
+    Description:
+        Contrain cube using lat lons
+    Args:
+        minlat (int): minium latitue
+        minlon (int): minimum longitude
+        maxlat (int): maximum latitue
+        maxlon (int): maximum longitude
+    Return:
+        tc_box_constraint (iris Constraints)
+    """
     # Create constraint to extract data from cube over a certain region
     longitude_constraint1 = iris.Constraint(
         longitude=lambda cell: cell > minlon)
@@ -185,10 +301,24 @@ def box_constraint(minlat, maxlat, minlon, maxlon):
 
 
 def calculate_pot_temp(pressure, temperature):
+    """calculate_pot_temp
+    Description:
+        Temp * (1000/Pressure)^0.286
+    Return potentail temp from pressure and temperature
+    """
     return temperature * (1000 / pressure)**(0.286)
 
 
 def calc_grad(data, dx):
+    """calc_grad
+    Description:
+        Basic central differencing
+    Args:
+        data (1D array): 1D data
+        dx: spacing
+    Return:
+        gradient (1D array)
+    """
     # Basic central differencing
     # Data should be 1-d
     grad = np.zeros(data.shape)
@@ -199,6 +329,17 @@ def calc_grad(data, dx):
 
 
 def extracter(fload, minlon, maxlon, minlat, maxlat):
+    """extracter
+    Description:
+    Args:
+        fload:
+        minlon:
+        maxlon:
+        minlat:
+        maxlat:
+    Return:
+        ir:
+    """
     ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
                                        maxlon, latitude=lambda cell: minlat < cell < maxlat))
     return ir
@@ -206,6 +347,21 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
 
 def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
                      p_constraint):
+    """load_ens_members
+    Description:
+    Args:
+        em (int): ensemble number
+        fpath (str): file path
+        x0 (1D array):
+        y0 (1D array):
+        data_constraint1 (iris constraint): u_constraint
+        data_constraint2 (iris constraint): v_constraint
+        p_constraint (iris constraint): pressure constraint
+    Return:
+        v_azi_all: tangential azimuth velocity
+        u_rad_all: radial azimuth velocity
+        vert: vertical velocity
+    """
     phi_interval = np.pi / 8
     ranges = np.arange(0, 500, 5)
     phis = np.arange(0, 2 * np.pi, phi_interval)
@@ -269,6 +425,15 @@ def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
 
 
 def max_vals(cube):
+    """max_vals
+    Description:
+    Args:
+        cube (iris cube): data
+    Returns:
+        cenlat: latitude coordinates of maximum value of data in cube.
+        cenlon: longitude coordinates of maximum value of data in cube.
+        maxval: maximum value of data in cube
+    """
     # Find latitude/longitude coordinates of maximum value of data in cube.
     index = np.argmax(cube.data)
     indices = np.unravel_index(index, cube.data.shape)
@@ -280,10 +445,16 @@ def max_vals(cube):
 
 
 def calc_vrt_spherical(u, v):
-    # Calculates vorticity in spherical coordinates using the following:
-    # omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
-    # u, v cubes on one vertical level
-
+    """calc_vrt_spherical
+    Description:
+        Calculates vorticity in spherical coordinates using the following:
+        omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
+    Args:
+        u (iris cube):
+        v (iris cube):
+    Returns:
+        vrt: vorticity
+    """
     lats = u.coord('latitude').points
     lons = u.coord('longitude').points
     LONS, LATS = np.meshgrid(lons, lats)
@@ -321,8 +492,12 @@ def calc_vrt_spherical(u, v):
         'source': 'Calculated using (u,v) from Met Office Unified Model', 'um_version': '10.6'}
     return vrt
 
-
 def plot_hovmoller(v_azi, vrad, outfile, em):
+    """plot_hovmoller
+    Description
+    Args:
+    Return:
+    """
     ranges = np.arange(0, 500, 5)
     fig = plt.figure(figsize=(8, 12))
     data = v_azi[0]
@@ -332,7 +507,7 @@ def plot_hovmoller(v_azi, vrad, outfile, em):
     ax = fig.add_subplot(1, 3, 1)
     ax.set_xlabel('Radius (km)', fontsize=18)
     ax.set_ylabel('Forecast time', fontsize=18)
-    ax.set_title('Simulation em', str(em))
+    plt.title('Simulation em', str(em))
     hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
