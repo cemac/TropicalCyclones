@@ -109,5 +109,5 @@ class hovmoller(object):
         lons = track_data['lons']
         [y0, x0] = [lats, lons]  # centre of storm
         df = fpath + '{0:02d}.pp'.format(em)
-        v_azi_list = tct.load_ens_members(em, fpath, x0, y0)
-        tct.plot_hovmoller(v_azi_list, outfile)
+        vtan, vrad = tct.load_ens_members(em, fpath, x0, y0)
+        tct.plot_hovmoller(vtan, vrad, outfile, em)
