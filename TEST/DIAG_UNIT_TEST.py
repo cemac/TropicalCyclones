@@ -27,7 +27,7 @@ print('time for single OLR')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('WindSpeed:')
 start_time = time.time()
-day = 1
+day = 4  # try for non skipped
 hour = 18
 c.WSdayhour(c.yr, c.mth, day, hour, c.init_day, c.final_day,
             c.init_time, c.final_time)
@@ -35,6 +35,6 @@ print('WindSpeed time:')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('Hovs')
 em = 01
-c.hovplotter(c.md, cd.mth, em)
+c.hovplotter(c.md, c.mth, em)
 print('Hovs time:')
 print("--- %s seconds ---" % (time.time() - start_time))
