@@ -1,0 +1,4 @@
+starting
+Loaded configuration settings
+--- 7526.34044194 seconds ---
+ending

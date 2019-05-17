@@ -29,4 +29,4 @@ start_time = time.time()
 import stamp_hovmoller as hv
 hv.main()
 print("--- %s seconds ---" % (time.time() - start_time))
-print(ending)
+print('ending')

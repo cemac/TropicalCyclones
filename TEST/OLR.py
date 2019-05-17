@@ -1,14 +1,4 @@
 # -*- coding: utf-8 -*-
-import matplotlib.image as image
-import cPickle as pickle
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import matplotlib.ticker as mticker
-import pandas as pd
-import ast
-import iris.analysis.calculus
-import toolkit as tct
-import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
 """ORL
 
 .. module:: ORL
@@ -32,12 +22,22 @@ Memebers:
 .. CEMAC_stomtracking:
    https://github.com/cemac/TropicalCyclones
 """
-
+import cPickle as pickle
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import pandas as pd
+import ast
+import iris.analysis.calculus
+import toolkit as tct
+import cartopy.crs as ccrs
 import numpy as np
 import iris
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
+# MUSE IMPORT AFTER - ignore linter
+import matplotlib.image as image
+import matplotlib.ticker as mticker
+import matplotlib.pyplot as plt
 
 
 class OLR(object):
@@ -47,7 +47,7 @@ class OLR(object):
 
     '''
 
-    def __init__(self, imfile='20170903IRMA.png'):
+    def __init__(self, timeselect, imfile='20170903IRMA.png'):
         '''
         Args:
             timeselect (int): number of hours after run

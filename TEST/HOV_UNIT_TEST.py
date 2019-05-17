@@ -1,4 +1,4 @@
-"""UNIT TEST for windspeed.py
+"""UNIT TEST for hov.py
     produce 1 plot,
     must select sensible year, month, day , time
 
