@@ -133,7 +133,7 @@ class DiagPlotter(object):
                 self.dayhour(self.yr, self.mth, dd, hr, self.init_day,
                              self.final_day, self.init_time, self.final_time)
 
-    def orlloop(self):
+    def olrloop(self):
         """loop
         Args:
         Returns:
@@ -262,7 +262,8 @@ class DiagPlotter(object):
         lats = track_data['lats']
         lons = track_data['lons']
         [y0, x0] = [lats, lons]  # centre of storm
-        vtan, vrad = tct.load_ens_members(em, fpath, x0, y0)
+        vtan, vrad = tct.load_ens_members(em, fpath, x0, y0, self.u_constraint,
+                                          self.v_constraint, self.p_constraint)
         tct.plot_hovmoller(vtan, vrad, outfile, em)
 
     def plots_loop(self, time):

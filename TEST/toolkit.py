@@ -28,9 +28,9 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt  # KEEP ME HERE!!!
-import matplotlib.cm as mpl_cm
 import matplotlib.ticker as mticker
+import matplotlib.cm as mpl_cm
+import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 
 
 def checker(dd, hr, d0, dN, t0, tN):
@@ -39,7 +39,6 @@ def checker(dd, hr, d0, dN, t0, tN):
     if dd > dN or (dd > dN - 1 and hr > tN - 1):
         lead_time = False
     lead_time = (dd - d0) * 24 + (hr - t0)
-    print('Plotting data for dd = {0}, hr = {1}'.format(dd, hr))
     return lead_time
 
 
@@ -180,8 +179,8 @@ def box_constraint(minlat, maxlat, minlon, maxlon):
         longitude=lambda cell: cell < maxlon)
     latitude_constraint1 = iris.Constraint(latitude=lambda cell: cell > minlat)
     latitude_constraint2 = iris.Constraint(latitude=lambda cell: cell < maxlat)
-    tc_box_constraint = (longitude_constraint1 & longitude_constraint2
-                         & latitude_constraint1 & latitude_constraint2)
+    tc_box_constraint = (longitude_constraint1 & longitude_constraint2 &
+                         latitude_constraint1 & latitude_constraint2)
     return tc_box_constraint
 
 
@@ -200,19 +199,13 @@ def calc_grad(data, dx):
 
 
 def extracter(fload, minlon, maxlon, minlat, maxlat):
-    ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
-                                       < maxlon, latitude=lambda cell: minlat < cell < maxlat))
+    ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
+                                       maxlon, latitude=lambda cell: minlat < cell < maxlat))
     return ir
 
 
-def load_ens_members(em, fpath, x0, y0):
-    md = 1203
-    TT = 12
-    stash_code1 = 'm01s15i201'
-    stash_code2 = 'm01s15i202'
-    data_constraint1 = iris.AttributeConstraint(STASH=stash_code1)
-    data_constraint2 = iris.AttributeConstraint(STASH=stash_code2)
-    p_constraint = iris.Constraint(pressure=850)
+def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
+                     p_constraint):
     phi_interval = np.pi / 8
     ranges = np.arange(0, 500, 5)
     phis = np.arange(0, 2 * np.pi, phi_interval)
@@ -283,7 +276,6 @@ def max_vals(cube):
     cenlat = cube.coord('latitude').points[indices[0]]
     cenlon = cube.coord('longitude').points[indices[1]]
     maxval = cube.data[indices]
-    # print maxval
     return cenlat, cenlon, maxval
 
 
@@ -331,34 +323,34 @@ def calc_vrt_spherical(u, v):
 
 
 def plot_hovmoller(v_azi, vrad, outfile, em):
-        ranges = np.arange(0, 500, 5)
-        fig = plt.figure(figsize=(8,12))
-        data = v_azi[0]
-        data = np.swapaxes(data, 0, 1)
-        times = np.arange(41)
-        fig = plt.figure(1)
-        ax = fig.add_subplot(1, 3, 1)
-        ax.set_xlabel('Radius (km)', fontsize=18)
-        ax.set_ylabel('Forecast time', fontsize=18)
-        ax.set_title('Simulation em', str(em))
-        hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
-        # Contour mean tangential wind
-        cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                            fraction=0.046, pad=0.09)
-        cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
-        cbar.ax.tick_params(labelsize=14)
-        ax = fig.add_subplot(1, 3, 2)
-        data = vrad[0]
-        data = np.swapaxes(data, 0, 1)
-        ax.set_xlabel('Radius (km)', fontsize=18)
-        ax.set_ylabel('Forecast time', fontsize=18)
-        ax.set_title('Simulation em', str(em))
-        hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
-        # Contour mean tangential wind
-        cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                            fraction=0.046, pad=0.09)
-        cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
-        cbar.ax.tick_params(labelsize=14)
-        # plt.show()
-        plt.savefig(outfile)
-        plt.close()
+    ranges = np.arange(0, 500, 5)
+    fig = plt.figure(figsize=(8, 12))
+    data = v_azi[0]
+    data = np.swapaxes(data, 0, 1)
+    times = np.arange(41)
+    fig = plt.figure(1)
+    ax = fig.add_subplot(1, 3, 1)
+    ax.set_xlabel('Radius (km)', fontsize=18)
+    ax.set_ylabel('Forecast time', fontsize=18)
+    ax.set_title('Simulation em', str(em))
+    hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
+    # Contour mean tangential wind
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
+    cbar.ax.tick_params(labelsize=14)
+    ax = fig.add_subplot(1, 3, 2)
+    data = vrad[0]
+    data = np.swapaxes(data, 0, 1)
+    ax.set_xlabel('Radius (km)', fontsize=18)
+    ax.set_ylabel('Forecast time', fontsize=18)
+    ax.set_title('Simulation em', str(em))
+    hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
+    # Contour mean tangential wind
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
+    cbar.ax.tick_params(labelsize=14)
+    # plt.show()
+    plt.savefig(outfile)
+    plt.close()
