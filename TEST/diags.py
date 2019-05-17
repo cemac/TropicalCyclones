@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """Diags
 
-.. module:: windspeed test
+.. module:: Diagnostics Plotter
     :platform: Unix
-    :synopis: Produces a simple stamp plot of windspeed for an ensemble of size
-              N
+    :synopis: Wind Diagnostics and OLR
 
-.. moduleauthor: John Ashcroft, CEMAC (UoL) February 2019.
+.. moduleauthor: John Ashcroft, Sam Hardy, Will CEMAC (UoL) February 2019.
 
 .. description: This module was developed by CEMAC as part of the WCSSP
                 Project. Intial script improvements
@@ -19,7 +18,7 @@ Example:
 
 Memebers:
 
-.. CEMAC_stomtracking:
+.. CEMAC_TropicalCyclones:
    https://github.com/cemac/TropicalCyclones
 """
 
@@ -130,7 +129,7 @@ class DiagPlotter(object):
         """
         for dd in self.v_days:
             for hr in self.v_times:
-                self.dayhour(self.yr, self.mth, dd, hr, self.init_day,
+                self.WSdayhour(self.yr, self.mth, dd, hr, self.init_day,
                              self.final_day, self.init_time, self.final_time)
 
     def olrloop(self):
@@ -138,8 +137,8 @@ class DiagPlotter(object):
         Args:
         Returns:
         """
-        fig = self.plots_loop(self.timeselect)
-        self.finplot(fig)
+        fig = self.loop_olr(self.timeselect)
+        self.fin_olr_plot(fig)
 
     def hovloop(self):
         """loop
@@ -151,13 +150,13 @@ class DiagPlotter(object):
                 for em in self.ens_members:
                     self.hovplotter(md, TT, em)
 
-    def dayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
-        """dayhour
+    def WSdayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
+        """WSdayhour
         Args:
         Returns:
         """
 
-        outtest = self.t_const(yr, mm, dd, hr, d0, dN, t0, tN)
+        outtest = self.time_const(yr, mm, dd, hr, d0, dN, t0, tN)
         if outtest is None:
             return
         # Create figure
@@ -173,7 +172,7 @@ class DiagPlotter(object):
             else:
                 ax = axs[ic]
             llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
-            wspeed_plt = self.plot_i(ax, self.df, em, tcon, bcon, llab, blab)
+            wspeed_plt = self.plot_em(ax, self.df, em, tcon, bcon, llab, blab)
         # Reduce white space and then make whole figure bigger,
         # keeping the aspect ratio constant.
         plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
@@ -203,8 +202,8 @@ class DiagPlotter(object):
         plt.savefig(outfile)
         plt.close()
 
-    def plot_i(self, ax, fpat, em, tcon, bcon, llab, blab):
-        """plot_i
+    def plot_em(self, ax, fpat, em, tcon, bcon, llab, blab):
+        """plot_em
         Args:
         Returns:
         """
@@ -227,8 +226,8 @@ class DiagPlotter(object):
                     backgroundcolor='white', fontsize=20)
         return wspeed_plt
 
-    def t_const(self, yr, mm, dd, hr, d0, dN, t0, tN):
-        """t_const
+    def time_const(self, yr, mm, dd, hr, d0, dN, t0, tN):
+        """time_const
         Args:
         Returns:
         """
@@ -266,7 +265,7 @@ class DiagPlotter(object):
                                           self.v_constraint, self.p_constraint)
         tct.plot_hovmoller(vtan, vrad, outfile, em)
 
-    def plots_loop(self, time):
+    def loop_olr(self, time):
         """loop
         Args:
         Returns:
@@ -322,7 +321,7 @@ class DiagPlotter(object):
         newir = ir.regrid(irtemp, iris.analysis.Linear())
         return newir
 
-    def finplot(self, fig):
+    def fin_olr_plot(self, fig):
         ax = fig.add_subplot(4, 5, 1)
         ax.imshow(image.imread(self.imfile))
         ax.get_xaxis().set_visible(False)

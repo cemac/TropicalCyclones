@@ -11,11 +11,13 @@
 import time
 start_time = time.time()
 import diags
+print('IMPORT')
 print('time for import')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('Class initialisation')
 start_time = time.time()
 c = diags.DiagPlotter()
+print('Load Class:')
 print('time for Class initialisation')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('OLR')
@@ -23,12 +25,12 @@ start_time = time.time()
 c.olrloop()
 print('time for single OLR')
 print("--- %s seconds ---" % (time.time() - start_time))
-print('WindSpeed')
+print('WindSpeed:')
 start_time = time.time()
 day = 1
 hour = 18
-c.dayhour(c.year, c.mth, day, hour, c.init_day, c.final_day,
-          c.init_time, c.final_time)
+c.WSdayhour(c.yr, c.mth, day, hour, c.init_day, c.final_day,
+            c.init_time, c.final_time)
 print('WindSpeed time:')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('Hovs')
