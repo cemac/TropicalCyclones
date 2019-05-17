@@ -44,6 +44,8 @@ if backend == 'Qt4Agg' and sys.version_info[0] == 2:
     mpl.use('Agg')
 # DO NOT MOVE ABOVE BACKEND FIX
 import matplotlib.pyplot as plt # KEEP ME HERE!!!
+import matplotlib.image as image
+import matplotlib.ticker as mticker
 
 
 class DiagPlotter(object):
@@ -136,19 +138,18 @@ class DiagPlotter(object):
         Args:
         Returns:
         """
-        newir, fig = self.plots_loop(self.timeselect)
-        self.finplot(newir, fig)
+        fig = self.plots_loop(self.timeselect)
+        self.finplot(fig)
 
     def hovloop(self):
         """loop
         Args:
         Returns:
         """
-        ofile = self.ofile
         for md in [self.md]:
             for TT in [self.TT]:
                 for em in self.ens_members:
-                    self.hovplotter(md, TT, em, ofile)
+                    self.hovplotter(md, TT, em)
 
     def dayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
         """dayhour
@@ -233,7 +234,7 @@ class DiagPlotter(object):
         """
         ltime = tct.checker(dd, hr, d0, dN, t0, tN)
         if ltime is False:
-            print('skipping')
+            print('Skipping: dd = {0}, hr = {1}'.format(dd, hr))
             return
         tcon = iris.Constraint(time=iris.time.PartialDateTime(year=yr,
                                                               month=mm, day=dd,
@@ -245,7 +246,7 @@ class DiagPlotter(object):
         mmll = tct.find_centre_3h(self.md, self.TT, 0, dd, hr, self.model,
                                   self.froot, self.fpat, self.domain_rad)
         if mmll is False:
-            print('skipping')
+            print('Skipping: dd = {0}, hr = {1}'.format(dd, hr))
             return
         bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
         return outfile, tcon, bcon, ltime
@@ -261,7 +262,6 @@ class DiagPlotter(object):
         lats = track_data['lats']
         lons = track_data['lons']
         [y0, x0] = [lats, lons]  # centre of storm
-        df = fpath + '{0:02d}.pp'.format(em)
         vtan, vrad = tct.load_ens_members(em, fpath, x0, y0)
         tct.plot_hovmoller(vtan, vrad, outfile, em)
 
@@ -285,12 +285,9 @@ class DiagPlotter(object):
             if i == 0:
                 ir_temp = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
             ir = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
-            x = ir.coord('longitude').points
-            y = ir.coord('latitude').points
-            X, Y = np.meshgrid(x, y)
             n = i + 1
             newir = self.plotORL(ir, fig, n, latt, lonn, ir_temp)
-        return newir, fig
+        return fig
 
     def plotORL(self, ir, fig, n, latt, lonn, irtemp):
         dataarray = np.zeros((750, 1000))
@@ -324,10 +321,7 @@ class DiagPlotter(object):
         newir = ir.regrid(irtemp, iris.analysis.Linear())
         return newir
 
-    def finplot(self, newir, fig):
-        x2 = newir.coord('longitude').points
-        y2 = newir.coord('latitude').points
-        X2, Y2 = np.meshgrid(x2, y2)
+    def finplot(self, fig):
         ax = fig.add_subplot(4, 5, 1)
         ax.imshow(image.imread(self.imfile))
         ax.get_xaxis().set_visible(False)
