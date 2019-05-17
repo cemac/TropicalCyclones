@@ -31,7 +31,7 @@ import cartopy.crs as ccrs
 import pandas as pd
 import cPickle as pickle
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import ast
+import sys
 import iris.analysis.calculus
 import toolkit as tct
 # University System python may be broken
@@ -112,13 +112,16 @@ class DiagPlotter(object):
         self.plot_df = pd.read_csv(plotfile + '.csv')
         print('Loaded plot settings file')
         # Read configuration file to import settings
+        self.ofile = 'plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_em{2:02d}.png'
+        # imfile, olrhome, t select root should be added to config
+        imfile = '20170903IRMA.png'
         self.olrhome = '/nfs/a319/ee16wst/OLR/'
         self.timeselect = 14
         self.imfile = self.olrhome + imfile
         self.root = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp"
         self.levelsvv = ((np.arange(25)) * 10) + 100
 
-    def loop(self):
+    def windoop(self):
         """loop
         Args:
         Returns:
@@ -128,7 +131,7 @@ class DiagPlotter(object):
                 self.dayhour(self.yr, self.mth, dd, hr, self.init_day,
                              self.final_day, self.init_time, self.final_time)
 
-    def loop(self):
+    def orlloop(self):
         """loop
         Args:
         Returns:
@@ -141,7 +144,7 @@ class DiagPlotter(object):
         Args:
         Returns:
         """
-        ofile = 'plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_em{2:02d}.png'
+        ofile = self.ofile
         for md in [self.md]:
             for TT in [self.TT]:
                 for em in self.ens_members:
@@ -247,18 +250,8 @@ class DiagPlotter(object):
         bcon = tct.box_constraint(mmll[0], mmll[1], mmll[2], mmll[3])
         return outfile, tcon, bcon, ltime
 
-    def hovloop(self):
-        """loop
-        Args:
-        Returns:
-        """
-        ofile = 'plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_em{2:02d}.png'
-        for md in [self.md]:
-            for TT in [self.TT]:
-                for em in self.ens_members:
-                    self.hovplotter(md, TT, em, ofile)
-
-    def hovplotter(self, md, TT, em, ofile):
+    def hovplotter(self, md, TT, em):
+        ofile = self.ofile
         fpath = self.data_loc.format(md, TT) + self.data_name.format(md, TT)
         outfile = ofile.format(md, TT, em)
         filepath = self.froot + \
@@ -272,7 +265,7 @@ class DiagPlotter(object):
         vtan, vrad = tct.load_ens_members(em, fpath, x0, y0)
         tct.plot_hovmoller(vtan, vrad, outfile, em)
 
-        def plots_loop(self, time):
+    def plots_loop(self, time):
         """loop
         Args:
         Returns:
