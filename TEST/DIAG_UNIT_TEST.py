@@ -8,9 +8,11 @@
     Updates:
     Speed2:
 """
+
 import time
 start_time = time.time()
 import diags
+import warnings
 print('IMPORT')
 print('time for import')
 print("--- %s seconds ---" % (time.time() - start_time))
@@ -25,6 +27,7 @@ start_time = time.time()
 c.olrloop()
 print('time for single OLR')
 print("--- %s seconds ---" % (time.time() - start_time))
+"""
 print('WindSpeed:')
 start_time = time.time()
 day = 4  # try for non skipped
@@ -38,3 +41,4 @@ em = 01
 c.hovplotter(c.md, c.mth, em)
 print('Hovs time:')
 print("--- %s seconds ---" % (time.time() - start_time))
+"""

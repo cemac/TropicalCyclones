@@ -21,16 +21,16 @@ Memebers:
 .. CEMAC_TropicalCyclones:
    https://github.com/cemac/TropicalCyclones
 """
-import numpy as np
+from __future__ import print_function
+import matplotlib
 import iris
+import numpy as np
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 import matplotlib.pyplot as plt  # KEEP ME HERE!!!
+matplotlib.pyplot.switch_backend('Agg')
 
 
 def checker(dd, hr, d0, dN, t0, tN):
