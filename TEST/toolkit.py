@@ -492,14 +492,20 @@ def calc_vrt_spherical(u, v):
         'source': 'Calculated using (u,v) from Met Office Unified Model', 'um_version': '10.6'}
     return vrt
 
+
 def plot_hovmoller(v_azi, vrad, outfile, em):
     """plot_hovmoller
     Description
     Args:
+        v_azi: tangential azimuth velocity
+        vrad: radial azimuth velocity
+        outfile (str):
+        em (str):
     Return:
+        hovmoller plot
     """
     ranges = np.arange(0, 500, 5)
-    fig = plt.figure(figsize=(8, 12))
+    fig = plt.figure(figsize=(16, 16))
     data = v_azi[0]
     data = np.swapaxes(data, 0, 1)
     times = np.arange(41)
@@ -507,7 +513,6 @@ def plot_hovmoller(v_azi, vrad, outfile, em):
     ax = fig.add_subplot(1, 3, 1)
     ax.set_xlabel('Radius (km)', fontsize=18)
     ax.set_ylabel('Forecast time', fontsize=18)
-    plt.title('Simulation em', str(em))
     hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
@@ -519,13 +524,13 @@ def plot_hovmoller(v_azi, vrad, outfile, em):
     data = np.swapaxes(data, 0, 1)
     ax.set_xlabel('Radius (km)', fontsize=18)
     ax.set_ylabel('Forecast time', fontsize=18)
-    ax.set_title('Simulation em', str(em))
     hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
     cbar.ax.tick_params(labelsize=14)
-    # plt.show()
+    fig.suptitle('Simulation em' + str(em))
+    plt.tightlayout()
     plt.savefig(outfile)
     plt.close()

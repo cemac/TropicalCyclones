@@ -1,0 +1,19 @@
+IMPORT
+time for import
+--- 4.13599991798 seconds ---
+Class initialisation
+Loaded configuration settings
+Loaded stash codes
+Loaded plot settings file
+Load Class:
+time for Class initialisation
+--- 0.121650934219 seconds ---
+OLR
+time for single OLR
+--- 9.73261189461 seconds ---
+WindSpeed:
+WindSpeed time:
+--- 41.106210947 seconds ---
+Hovs
+Hovs time:
+--- 676.333107948 seconds ---
