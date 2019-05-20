@@ -332,13 +332,13 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     """extracter
     Description:
     Args:
-        fload:
-        minlon:
-        maxlon:
-        minlat:
-        maxlat:
+        fload (iris cube): loaded file
+        minlon (int): minimum longitude
+        maxlon (int): maximum longitude
+        minlat (int): minimum latitude
+        maxlat (int): maximum latitude
     Return:
-        ir:
+        ir (iris cube): Contrained iris cube
     """
     ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
                                        maxlon, latitude=lambda cell: minlat < cell < maxlat))

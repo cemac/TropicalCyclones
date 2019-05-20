@@ -42,7 +42,7 @@ if backend == 'Qt4Agg' and sys.version_info[0] == 2:
     print('Please consider using anaconda')
     mpl.use('Agg')
 # DO NOT MOVE ABOVE BACKEND FIX
-import matplotlib.pyplot as plt # KEEP ME HERE!!!
+import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 import matplotlib.image as image
 import matplotlib.ticker as mticker
 
@@ -53,7 +53,16 @@ class DiagPlotter(object):
         plotting tools
 
     Members:
-
+        windoop: loop over windspeed plots (WSdayhour)
+        olrloop: loop over OLR ensemble members
+        hovloop: loop over ensemble members at give time
+        WSdayhour: loop over the day and hour and call stamp plotter
+        plot_em: plot WindSpeed plot for each ensemble member
+        time_const: contrain for time and location
+        hovplotter: call hovoller plotter for time and memeber
+        loop_olr:
+        plotOLR:
+        fin_olr_plot:
     '''
 
     def __init__(self, configfile='configfile2', stashfile='stashvars',
@@ -123,9 +132,14 @@ class DiagPlotter(object):
         self.levelsvv = ((np.arange(25)) * 10) + 100
 
     def windoop(self):
-        """loop
+        """windloop
+        Description:
+            Loops over days and hours from config file plotting WindSpeed stamp
+            plots
         Args:
+            none
         Returns:
+            WindSpeed stamp plots
         """
         for dd in self.v_days:
             for hr in self.v_times:
@@ -133,17 +147,27 @@ class DiagPlotter(object):
                              self.final_day, self.init_time, self.final_time)
 
     def olrloop(self):
-        """loop
+        """olrloop
+        Description:
+            Execute loop over ensemble plotting of Outgoing longwave radiation
+            and add finishing touches
         Args:
+            none
         Returns:
+            OLR plot for set time accross ensembles.
         """
         fig = self.loop_olr(self.timeselect)
         self.fin_olr_plot(fig)
 
     def hovloop(self):
-        """loop
+        """hovloop
+        Description:
+            Single plots for each ensemble member of tangential, radial and
+            vertical wind speed.
         Args:
+            none
         Returns:
+            Hovmoller plot for a day and time for a set ensemble member
         """
         for md in [self.md]:
             for TT in [self.TT]:
@@ -152,8 +176,20 @@ class DiagPlotter(object):
 
     def WSdayhour(self, yr, mm, dd, hr, d0, dN, t0, tN):
         """WSdayhour
+        Description:
+            Calls the plotter for WindSpeed for set time and adds approriate
+            lables
         Args:
+            yr (int): year
+            mm (int): month
+            dd (int): day
+            hr (int): hour
+            d0 (int): initial day
+            dN (int): end day
+            t0 (int): initial time
+            tN (int): end time
         Returns:
+            WindSpeed stamp plot for certain time
         """
 
         outtest = self.time_const(yr, mm, dd, hr, d0, dN, t0, tN)
@@ -204,8 +240,18 @@ class DiagPlotter(object):
 
     def plot_em(self, ax, fpat, em, tcon, bcon, llab, blab):
         """plot_em
+        Description:
+            Plots each subplot for ensemble wind speed
         Args:
+            ax (matplotlib figure axis): the axes to plot to
+            fpat (str): file path to data
+            em (int): ensemble memeber
+            tcon (iris constraint): time contraints
+            bcon (iris constraint): location contraints
+            llab (str or logical): either left lable or false
+            blab (str or logical): either bottome label or false
         Returns:
+            approriate subplot
         """
         df = fpat + '{0:02d}.pp'.format(em)
         # Load the data for this ensemble member at this time
@@ -228,8 +274,22 @@ class DiagPlotter(object):
 
     def time_const(self, yr, mm, dd, hr, d0, dN, t0, tN):
         """time_const
+        Description:
+            Checks and generates cube constraints
         Args:
+            yr (int): year
+            mm (int): month
+            dd (int): day
+            hr (int): hour
+            d0 (int): initial day
+            dN (int): end day
+            t0 (int): initial time
+            tN (int): end time
         Returns:
+            outfile (str): name of file to be produced
+            tcon (iris constraint): time constraint
+            bcon (iris constraint): location constraint
+            ltime (int): lead time (if false returns nothing)
         """
         ltime = tct.checker(dd, hr, d0, dN, t0, tN)
         if ltime is False:
@@ -266,9 +326,14 @@ class DiagPlotter(object):
         tct.plot_hovmoller(vtan, vrad, outfile, em)
 
     def loop_olr(self, time):
-        """loop
+        """loop_olr
+        Description:
+            Loops over ensemble members to produce a stamp plot of outgoing
+            longwave radiation. Calls data extracter and plotter.
         Args:
+            time (int): selected time
         Returns:
+            fig (matplotlib figure): plot of OLR for set time for all members
         """
         fig = plt.figure(figsize=(15, 12))
         for i in range(18):
@@ -286,10 +351,23 @@ class DiagPlotter(object):
                 ir_temp = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
             ir = tct.extracter(ir, minlon, maxlon, minlat, maxlat)
             n = i + 1
-            newir = self.plotORL(ir, fig, n, latt, lonn, ir_temp)
+            newir = self.plotOLR(ir, fig, n, latt, lonn, ir_temp)
         return fig
 
-    def plotORL(self, ir, fig, n, latt, lonn, irtemp):
+    def plotOLR(self, ir, fig, n, latt, lonn, irtemp):
+        """plotOLR
+        Description:
+            Outgoing Longwave Radiation Plotter.
+        Args:
+            ir (iris cube):
+            fig (matplotlib figure):
+            n (int): iterable (plot/ ensemble number)
+            latt (list) latitude list
+            lonn (list): longitude list
+            irtemp (iris cube): constrained iris cube (em0)
+        Returns:
+            fig (matplotlib figure): plot of OLR for set time for all members
+        """
         dataarray = np.zeros((750, 1000))
         dataarray = ir.data
         x = ir.coord('longitude').points
@@ -322,6 +400,14 @@ class DiagPlotter(object):
         return newir
 
     def fin_olr_plot(self, fig):
+        """fin_olr_plot
+        Description:
+            Add observation to OLR plot
+        Args:
+            fig (matplotlib figure): figure axes to add to
+        Returns:
+            matplotlib figure OLR and saved
+        """
         ax = fig.add_subplot(4, 5, 1)
         ax.imshow(image.imread(self.imfile))
         ax.get_xaxis().set_visible(False)
@@ -333,5 +419,5 @@ class DiagPlotter(object):
                  fontsize=18, ha="center", transform=fig.transFigure)
         plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
                  fontsize=12, ha="center", transform=fig.transFigure)
-        plt.savefig('test.png')
+        plt.savefig('OLR.png')
         plt.close()
