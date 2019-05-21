@@ -38,6 +38,25 @@ import toolkit as tct
 mpl.pyplot.switch_backend('Agg')
 
 
+def set_ofile():
+    """set_ofile
+    """
+    ofile = ('plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_' +
+             'em{2:02d}.png')
+    return ofile
+
+
+class OLR(object):
+    def __init__(self):
+        """
+        """
+        imfile = '20170903IRMA.png'
+        self.olrhome = '/nfs/a319/ee16wst/OLR/'
+        self.imfile = self.olrhome + imfile
+        self.timeselect = 14
+        self.levelsvv = ((np.arange(25)) * 10) + 100
+
+
 class DiagPlotter(object):
     '''Diagnostics Plotter
         Initialised extra varible and provides standard plots and
@@ -67,62 +86,55 @@ class DiagPlotter(object):
         conf_df = pd.read_csv(configfile + '.csv')
         conf_df = conf_df.set_index('var:').transpose()
         # Define all constraints and locate data.
-        self.data_root = conf_df.data_root[0]
+        data_root = conf_df.data_root[0]
         storm = conf_df.Storm[0]
         suitno = conf_df.suitno[0]
         run = conf_df.run[0]
         mmdd_hr = conf_df.mmdd_hr[0]
         var = conf_df.vars[0]
-        self.data_loc = (self.data_root + '/' + storm + '/' + suitno + '/' +
+        self.data_loc = (data_root + '/' + storm + '/' + suitno + '/' +
                          run + '/' + mmdd_hr + '/' + var)
         self.data_name = conf_df.data_name[0]
         self.outfile_loc = conf_df.outfile_loc[0]
         self.outfile_name = conf_df.outfile_name.values
         self.ens_members = np.arange(int(conf_df.ens_members[0]))
         self.plev = int(conf_df.plev[0])
-        self.mmdd = int(conf_df.md[0])
-        self.time = int(conf_df.TT[0])
         self.model = conf_df.model[0]
-        self.v_times = ast.literal_eval(conf_df.v_times[0])
-        self.init_day = int(conf_df.init_day[0])
-        self.init_time = int(conf_df.init_time[0])
-        self.final_day = int(conf_df.final_day[0])
-        self.final_time = int(conf_df.final_time[0])
-        self.v_days = np.arange(self.init_day, self.init_day + 6, 1)
-        self.year = int(conf_df.year[0])
-        self.mth = int(conf_df.mth[0])
+        # Times
+        init_day = int(conf_df.init_day[0])
+        init_time = int(conf_df.init_time[0])
+        final_day = int(conf_df.final_day[0])
+        final_time = int(conf_df.final_time[0])
+        self.times = [init_day, init_time, final_day, final_time]
+        v_times = ast.literal_eval(conf_df.v_times[0])
+        v_days = np.arange(init_day, init_day + 6, 1)
+        self.vtimes = [v_times, v_days]
+        # dates
+        year = int(conf_df.year[0])
+        mth = int(conf_df.mth[0])
+        mmdd = int(conf_df.md[0])
+        time = int(conf_df.TT[0])
+        self.dates = [year, mth, mmdd, time]
         self.domain_rad = float(conf_df.domain_rad[0])
-        print('Loaded configuration settings')
-        # add stash codes
-        stash_df = pd.read_csv(stashfile + '.csv')
-        u_stash = stash_df.u_stash[0]
-        v_stash = stash_df.v_stash[0]
-        self.slp_stash = stash_df.slp_stash[0]
-        self.u_constraint = iris.AttributeConstraint(STASH=u_stash)
-        self.v_constraint = iris.AttributeConstraint(STASH=v_stash)
         self.froot = conf_df.track_data_root[0]
         self.fpat = conf_df.track_data_metadata[0]
         # Determine the dimensions of the stamp plot according to no members
-        self.n_ems = len(self.ens_members)
-        self.nrows, self.ncols = tct.find_subplot_dims(self.n_ems)
-        self.p_constraint = iris.Constraint(pressure=self.plev)
-        self.data_f = self.data_loc.format(
-            self.mmdd, self.time) + self.data_name.format(self.mmdd, self.time)
-        print('Loaded stash codes')
+        nrows, ncols = tct.find_subplot_dims(len(self.ens_members))
+        self.rows_cols = [nrows, ncols]
+        print('Loaded configuration settings')
+        # add stash codes
+        self.shashfile = stashfile
 
-        # Plotting configuration
-        self.plot_df = pd.read_csv(plotfile + '.csv')
-        print('Loaded plot settings file')
-        # Read configuration file to import settings
-        self.ofile = ('plots/hovs' + '/{0:04d}_{1:02d}Zhovmoller_'
-                      + '4p4_{0:04d}_{1:02d}Z_em{2:02d}.png')
-        # imfile, olrhome, t select root should be added to config
-        imfile = '20170903IRMA.png'
-        self.olrhome = '/nfs/a319/ee16wst/OLR/'
-        self.timeselect = 14
-        self.imfile = self.olrhome + imfile
-        self.root = "/nfs/a299/TCs/maria/MARIA_09{1:02}_{2:02}Z_em{0:02}_pb.pp"
-        self.levelsvv = ((np.arange(25)) * 10) + 100
+    def stash_vars(self):
+        """
+        """
+        stash_df = pd.read_csv(self.stashfile + '.csv')
+        u_stash = stash_df.u_stash[0]
+        v_stash = stash_df.v_stash[0]
+        u_constraint = iris.AttributeConstraint(STASH=u_stash)
+        v_constraint = iris.AttributeConstraint(STASH=v_stash)
+        p_constraint = iris.Constraint(pressure=self.plev)
+        return u_constraint, v_constraint, p_constraint
 
     def windloop(self):
         """windloop
@@ -134,11 +146,10 @@ class DiagPlotter(object):
         Returns:
             WindSpeed stamp plots
         """
-        for day in self.v_days:
-            for hour in self.v_times:
-                self.ws_dayhour(self.year, self.mth, day, hour,
-                                self.init_day, self.final_day, self.init_time,
-                                self.final_time)
+        v_times, v_days = self.vtimes
+        for day in v_days:
+            for hour in v_times:
+                self.ws_dayhour(day, hour)
 
     def olrloop(self):
         """olrloop
@@ -150,8 +161,9 @@ class DiagPlotter(object):
         Returns:
             OLR plot for set time accross ensembles.
         """
-        fig = self.loop_olr(self.timeselect)
-        self.fin_olr_plot(fig)
+        olr = OLR()
+        fig = self.loop_olr(olr.timeselect, olr)
+        self.fin_olr_plot(fig, olr)
 
     def hovloop(self):
         """hovloop
@@ -163,36 +175,31 @@ class DiagPlotter(object):
         Returns:
             Hovmoller plot for a day and time for a set ensemble member
         """
-        for mmdd in [self.mmdd]:
-            for hour in [self.time]:
+        year, mth, mmdd, time = self.dates
+        for mmdd in mmdd:
+            for hour in time:
                 for ens in self.ens_members:
                     self.hovplotter(mmdd, hour, ens)
 
-    def ws_dayhour(self, year, month, day, hour, day_0, day_n, time_0, time_n):
+    def ws_dayhour(self, day, hour):
         """ws_dayhour
         Description:
             Calls the plotter for WindSpeed for set time and adds approriate
             lables
         Args:
-            year (int): year
-            month (int): month
             day (int): day
             hour (int): hour
-            day_0 (int): initial day
-            day_n (int): end day
-            time_0 (int): initial time
-            time_n (int): end time
         Returns:
             WindSpeed stamp plot for certain time
         """
-
-        outtest = self.time_const(
-            year, month, day, hour, day_0, day_n, time_0, time_n)
+        outtest = self.time_const(day, hour)
+        year, mth, mmdd, time = self.dates
         if outtest is None:
             return
         # Create figure
         outfile, tcon, bcon, ltime = outtest
-        fig, axs = plt.subplots(self.nrows, self.ncols, dpi=100,
+        nrows, ncols = self.rows_cols
+        fig, axs = plt.subplots(nrows, ncols, dpi=100,
                                 subplot_kw={'projection': ccrs.PlateCarree()})
         for i, ens in enumerate(self.ens_members):
             # Determine figure coordinate
@@ -202,9 +209,12 @@ class DiagPlotter(object):
                 ax_ws = axs[row_i][col_i]
             else:
                 ax_ws = axs[col_i]
-            llab, blab = tct.label_fixer(i, self.ncols, self.nrows)
-            wspeed_plt = self.plot_ens(
-                ax_ws, self.data_f, ens, tcon, bcon, llab, blab)
+            llab, blab = tct.label_fixer(i, ncols, nrows)
+            constraints = [tcon, bcon]
+            labels = [llab, blab]
+            data_f = (self.data_loc.format(mmdd, time) +
+                      self.data_name.format(mmdd, time))
+            wspeed_plt = self.plot_ens(x_ws, data_f, ens, constraints, labels)
         # Reduce white space and then make whole figure bigger,
         # keeping the aspect ratio constant.
         plt.gcf().subplots_adjust(hspace=0.025, wspace=0.025, bottom=0.05,
@@ -219,8 +229,7 @@ class DiagPlotter(object):
         cbar.set_label(str(self.plev) + 'hPa WindSpeed (ms$^{-1}$)', size=18)
         current = fig.gca()
         string1 = ('Initial time: {0}/{1}/{2}, {3:02d}'
-                   + 'Z').format(str(self.mmdd)[-2:], str(self.mmdd)[:2],
-                                 self.year, self.time)
+                   + 'Z').format(str(mmdd)[-2:], str(mmdd)[:2], year, time)
         xy1 = [0.95, 0.95]
         string2 = ('Valid time: {0:02d}/{1:02d}/{2}, {3:02d}'
                    + 'Z').format(day, self.mth, self.year, hour)
@@ -233,7 +242,7 @@ class DiagPlotter(object):
         plt.savefig(outfile)
         plt.close()
 
-    def plot_ens(self, ax_ws, fpat, ens, tcon, bcon, llab, blab):
+    def plot_ens(self, ax_ws, fpat, ens, contraints, labels):
         """plot_ens
         Description:
             Plots each subplot for ensemble wind speed
@@ -241,17 +250,20 @@ class DiagPlotter(object):
             ax_ws (matplotlib figure axis): the axes to plot to
             fpat (str): file path to data
             ens (int): ensemble memeber
-            tcon (iris constraint): time contraints
-            bcon (iris constraint): location contraints
-            llab (str or logical): either left lable or false
-            blab (str or logical): either bottome label or false
+            contraints (tuple): tcon (iris time contraint)
+                                bcon (iris location constraint)
+            labels (tuple): llab (str or logical), left lable or false
+                            blab (str or logical), bottome label or false
         Returns:
             approriate subplot
         """
+        tcon, bcon = contraints
+        llab, blab = labels
         d_file = fpat + '{0:02d}.pp'.format(ens)
         # Load the data for this ensemble member at this time
-        uvel = tct.uv(d_file, self.u_constraint, tcon, self.p_constraint, bcon)
-        vvel = tct.uv(d_file, self.v_constraint, tcon, self.p_constraint, bcon)
+        u_constraint, v_constraint, p_constraint = self.stash_vars()
+        uvel = tct.uv(d_file, u_constraint, tcon, p_constraint, bcon)
+        vvel = tct.uv(d_file, v_constraint, tcon, p_constraint, bcon)
         uvel, vvel, w_speed = tct.winds(uvel, vvel, ens)
         wspeed_plt = tct.plot_wspeed(ax_ws, w_speed)
         tct.plot_winds(ax_ws, uvel, vvel, self.model)
@@ -267,7 +279,7 @@ class DiagPlotter(object):
                        backgroundcolor='white', fontsize=20)
         return wspeed_plt
 
-    def time_const(self, year, month, day, hour, day_0, day_n, time_0, time_n):
+    def time_const(self, day, hour):
         """time_const
         Description:
             Checks and generates cube constraints
@@ -286,21 +298,23 @@ class DiagPlotter(object):
             bcon (iris constraint): location constraint
             ltime (int): lead time (if false returns nothing)
         """
-        ltime = tct.checker(day, hour, day_0, day_n, time_0, time_n)
+        init_day, init_time, final_day, final_time = self.times
+        year, mth, mmdd, time = self.dates
+        ltime = tct.checker(day, hour, init_day, init_time, final_day,
+                            final_time)
         if ltime is False:
             print('Skipping: dd = {0}, hour = {1}'.format(day, hour))
             return ltime
         tcon = iris.Constraint(time=iris.time.PartialDateTime(year=year,
-                                                              month=month,
+                                                              month=mth,
                                                               day=day,
                                                               hour=hour))
         out = self.outfile_loc + 'wind/' + self.outfile_name[0] + '.png'
         outfile = out.format(day, hour)
         # Fix domain according to position of ensemble member 0,
         # this assumes the position is similar in ensemble members
-        mmll = tct.find_centre_3h(self.mmdd, self.time, 0, day, hour,
-                                  self.model, self.froot, self.fpat,
-                                  self.domain_rad)
+        mmll = tct.find_centre_3h(mmdd, time, 0, day, hour, self.model,
+                                  self.froot, self.fpat, self.domain_rad)
         if mmll is False:
             print('Skipping: dd = {0}, hour = {1}'.format(day, hour))
             return mmll
@@ -317,7 +331,7 @@ class DiagPlotter(object):
         Returns:
             hovmoller plot of ensemble memeber for set time
         """
-        ofile = self.ofile
+        ofile = set_ofile()
         fpath = self.data_loc.format(
             mmdd, hour) + self.data_name.format(mmdd, hour)
         outfile = ofile.format(mmdd, hour, ens)
@@ -328,28 +342,29 @@ class DiagPlotter(object):
         lats = track_data['lats']
         lons = track_data['lons']
         [y_0, x_0] = [lats, lons]  # centre of storm
-        vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0,
-                                          self.u_constraint, self.v_constraint,
-                                          self.p_constraint)
+        u_constraint, v_constraint, p_constraint = self.stash_vars
+        vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0, u_constraint,
+                                          v_constraint, p_constraint)
         tct.plot_hovmoller(vtan, vrad, outfile, ens)
 
-    def loop_olr(self, time):
+    def loop_olr(self, time, olr):
         """loop_olr
         Description:
             Loops over ensemble members to produce a stamp plot of outgoing
             longwave radiation. Calls data extracter and plotter.
         Args:
             time (int): selected time
+            olr (object): OLR class containing olr info
         Returns:
             fig (matplotlib figure): plot of OLR for set time for all members
         """
         fig = plt.figure(figsize=(15, 12))
         for i in range(18):
-            filename = self.olrhome + "olralle{0}.pp".format(i)
+            filename = olr.olrhome + "olralle{0}.pp".format(i)
             cube_i = iris.load(filename)[0][0]
-            with open(self.olrhome + 'late{0:02}.pkl'.format(i), "rb") as pkl:
+            with open(olr.olrhome + 'late{0:02}.pkl'.format(i), "rb") as pkl:
                 latt = np.asarray(pickle.load(pkl))
-            with open(self.olrhome + 'lone{0:02}.pkl'.format(i), "rb") as pkl:
+            with open(olr.olrhome + 'lone{0:02}.pkl'.format(i), "rb") as pkl:
                 lonn = np.asarray(pickle.load(pkl))
             minlon = float(lonn[time] - 5)
             maxlon = float(lonn[time] + 5)
@@ -360,23 +375,29 @@ class DiagPlotter(object):
                                           maxlat)
             cube_i = tct.extracter(cube_i, minlon, maxlon, minlat, maxlat)
             plot_no = i + 1
-            self.plot_olr(cube_i, fig, plot_no, latt, lonn, cube_temp)
+            cubes = [cube_i, cube_temp]
+            latlons = [latt, lonn]
+            self.plot_olr(cubes, fig, plot_no, latlons, olr)
         return fig
 
-    def plot_olr(self, cube_i, fig, i, latt, lonn, cube_temp):
+    def plot_olr(self, cubes, fig, i, latlons, olr):
         """plot_olr
         Description:
             Outgoing Longwave Radiation Plotter.
         Args:
-            cube_i (iris cube):
+            cubes (tuple of iris cubes):
+                                        cube_i constrained iris cube (emN)
+                                        cube_temp constrained iris cube (em0)
             fig (matplotlib figure):
             n (int): iterable (plot/ ensemble number)
-            latt (list) latitude list
-            lonn (list): longitude list
-            cube_temp (iris cube): constrained iris cube (em0)
+            latlons (tuple): latt (list) latitude list
+                             lonn (list): longitude list
+            olr (object): OLR class containing olr info
+
         Returns:
             fig (matplotlib figure): plot of OLR for set time for all members
         """
+        cube_i = cubes[0]
         dataarray = np.zeros((750, 1000))
         dataarray = cube_i.data
         x_points = cube_i.coord('longitude').points
@@ -398,19 +419,20 @@ class DiagPlotter(object):
                         xycoords='axes fraction', horizontalalignment='right',
                         verticalalignment='bottom', color='k',
                         backgroundcolor='white', fontsize=12)
-        time = self.timeselect
+        time = olr.timeselect
+        latt, lonn = latlons
         olr_ax.set_extent([lonn[time] - 5, lonn[time] + 5, latt[time] - 5,
                            latt[time] + 5])
-        vvcontour = olr_ax.contourf(x, y, dataarray, levels=self.levelsvv,
+        vvcontour = olr_ax.contourf(x, y, dataarray, levels=olr.levelsvv,
                                     cmap=plt.cm.get_cmap('binary'),
                                     extend='both')
         cbar_ax = fig.add_axes([0.92, 0.15, 0.05, 0.7])
         cbar = fig.colorbar(vvcontour, cax=cbar_ax)
         cbar.olr_ax.set_title(r'$\mathregular{W/m^{2}}$')
-        new_cube = cube_i.regrid(cube_temp, iris.analysis.Linear())
+        new_cube = cube_i.regrid(cubes[1], iris.analysis.Linear())
         return new_cube
 
-    def fin_olr_plot(self, fig):
+    def fin_olr_plot(self, fig, olr):
         """fin_olr_plot
         Description:
             Add observation to OLR plot
@@ -420,7 +442,7 @@ class DiagPlotter(object):
             matplotlib figure OLR and saved
         """
         ax_sat = fig.add_subplot(4, 5, 1)
-        ax_sat.imshow(image.imread(self.imfile))
+        ax_sat.imshow(image.imread(olr.imfile))
         ax_sat.get_xaxis().set_visible(False)
         ax_sat.get_yaxis().set_visible(False)
         ax_sat.annotate('IR', xy=(0.97, 0.03), xycoords='axes fraction',
