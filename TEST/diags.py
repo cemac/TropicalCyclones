@@ -363,10 +363,10 @@ class DiagPlotter(object):
         d_file = fpat_ens[0] + '{0:02d}.pp'.format(fpat_ens[1])
         # Load the data for this ensemble member at this time
         var_constraints = self.stash_vars()
-        uvel = tct.uv(d_file, var_constraints[0], contraints[0],
-                      var_constraints[2], contraints[1])
-        vvel = tct.uv(d_file, var_constraints[1], contraints[0],
-                      var_constraints[2], contraints[1])
+        uvel = tct.vel_extract(d_file, var_constraints[0], contraints[0],
+                               var_constraints[2], contraints[1])
+        vvel = tct.vel_extract(d_file, var_constraints[1], contraints[0],
+                               var_constraints[2], contraints[1])
         uvel, vvel, w_speed = tct.winds(uvel, vvel, fpat_ens[1])
         wspeed_plt = tct.plot_wspeed(ax_ws, w_speed)
         tct.plot_winds(ax_ws, uvel, vvel, self.model)
@@ -391,20 +391,14 @@ class DiagPlotter(object):
             month (int): month
             day (int): day
             hour (int): hour
-            day_0 (int): initial day
-            day_n (int): end day
-            time_0 (int): initial time
-            time_n (int): end time
         Returns:
             outfile (str): name of file to be produced
             tcon (iris constraint): time constraint
             bcon (iris constraint): location constraint
             ltime (int): lead time (if false returns nothing)
         """
-        init_day, init_time, final_day, final_time = self.times
         year, mth, mmdd, time = self.dates
-        ltime = tct.checker(day, hour, init_day, init_time, final_day,
-                            final_time)
+        ltime = tct.checker(day, hour, self.times)
         if ltime is False:
             print('Skipping: dd = {0}, hour = {1}'.format(day, hour))
             return ltime
@@ -416,8 +410,8 @@ class DiagPlotter(object):
         outfile = out.format(day, hour)
         # Fix domain according to position of ensemble member 0,
         # this assumes the position is similar in ensemble members
-        mmll = tct.find_centre_3h(mmdd, time, 0, day, hour, self.model,
-                                  self.track[0], self.track[1], self.track[2])
+        mmll = tct.find_centre_3h([mmdd, time, 0, day, hour, self.model],
+                                  self.v_times, self.track)
         if mmll is False:
             print('Skipping: dd = {0}, hour = {1}'.format(day, hour))
             return mmll
@@ -445,7 +439,6 @@ class DiagPlotter(object):
         lats = track_data['lats']
         lons = track_data['lons']
         [y_0, x_0] = [lats, lons]  # centre of storm
-        u_constraint, v_constraint, p_constraint = self.stash_vars()
-        vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0, u_constraint,
-                                          v_constraint, p_constraint)
+        contraints = self.stash_vars()
+        vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0, constraints)
         tct.plot_hovmoller(vtan, vrad, outfile, ens)

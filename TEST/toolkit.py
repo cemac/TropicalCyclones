@@ -22,40 +22,42 @@ Memebers:
    https://github.com/cemac/TropicalCyclones
 """
 from __future__ import print_function
-import matplotlib
 import iris
 import numpy as np
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib
 import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 import matplotlib.pyplot as plt  # KEEP ME HERE!!!
 matplotlib.pyplot.switch_backend('Agg')
 
 
-def checker(dd, hr, d0, dN, t0, tN):
+def checker(day, hour, times):
     """checker
     Description:
         Check in correct time critera depending on set start and end time.
     Args:
-        dd(int): day
-        hr(int): hour
-        d0(int): init day
-        dN(int): end day
-        t0(int): init hour
-        tN(int): end hour
+        day(int): day
+        hour(int): hour
+        times (list): list of start and end times
+            day_0(int): init day
+            day_n(int): end day
+            time_0(int): init hour
+            time_n(int): end hour
     Return:
         lead_time (int) or lead_time .false.
     """
-    if dd < d0 or (dd == d0 and hr < t0 + 1):
+    day_0, day_n, time_0, time_n = times
+    if day < day_0 or (day == day_0 and hour < time_0 + 1):
         lead_time = False
-    if dd > dN or (dd > dN - 1 and hr > tN - 1):
+    if day > day_n or (day > day_n - 1 and hour > time_n - 1):
         lead_time = False
-    lead_time = (dd - d0) * 24 + (hr - t0)
+    lead_time = (day - day_0) * 24 + (hour - time_0)
     return lead_time
 
 
-def find_subplot_dims(n):
+def find_subplot_dims(n_ensembles):
     """find_subplot_dims
     Description:
         Automatic format subplots for given number of plots
@@ -65,17 +67,17 @@ def find_subplot_dims(n):
         n_rows (int): number of rows
         n_cols (int): number of columns
     """
-    n_cols = np.ceil(n**0.5).astype(int)
-    n_rows = np.ceil(1. * n / n_cols).astype(int)
+    n_cols = np.ceil(n_ensembles**0.5).astype(int)
+    n_rows = np.ceil(1. * n_ensembles / n_cols).astype(int)
     return n_rows, n_cols
 
 
-def uv(df, u_cons, t_cons, p_cons, b_cons):
+def vel_extract(d_file, u_cons, t_cons, p_cons, b_cons):
     """uv
     Description:
         Extract velocity field under constants
     Args:
-        df (str): file name
+        d_file (str): file name
         u_cons (iris constraint): velocity constraint
         t_cons (iris constraint): temporal constraint (set by time_const)
         p_cons (iris constraint): pressure constraint
@@ -84,44 +86,44 @@ def uv(df, u_cons, t_cons, p_cons, b_cons):
         u (iris cube): velocity field matching constraints
     """
     with iris.FUTURE.context(cell_datetime_objects=True):
-        u = iris.load_cube(df, u_cons).extract(t_cons & p_cons & b_cons)
-    return u
+        vel = iris.load_cube(d_file, u_cons).extract(t_cons & p_cons & b_cons)
+    return vel
 
 
-def winds(u, v, em):
+def winds(uvel, vvel, ens):
     """winds
     Description:
         Create cube of WindSpeeds for all ensemble members
     Args:
-        u (iris cube): zonal velocity cube (produced by uv)
-        v (iris cube): meridional velocity cube (produced by uv)
-        em (int): ensemble member number
+        uvel (iris cube): zonal velocity cube (produced by uv)
+        vvel (iris cube): meridional velocity cube (produced by uv)
+        ens (int): ensemble member number
     Return:
-        u (iris cube): zonal velocity cube with assigned em member
-        v (iris cube): meridional velocity cube with assigned em member
-        ws (iris cube): windspeed cube with assigned em member
+        uvel (iris cube): zonal velocity cube with assigned em member
+        vvel (iris cube): meridional velocity cube with assigned em member
+        w_speed (iris cube): windspeed cube with assigned em member
     """
-    ws = (u**2 + v**2)**0.5
-    coord = iris.coords.AuxCoord(em, long_name='ensemble_member')
-    u.add_aux_coord(coord)
-    v.add_aux_coord(coord)
-    ws.add_aux_coord(coord)
-    return u, v, ws
+    w_speed = (uvel**2 + vvel**2)**0.5
+    coord = iris.coords.AuxCoord(ens, long_name='ensemble_member')
+    uvel.add_aux_coord(coord)
+    vvel.add_aux_coord(coord)
+    w_speed.add_aux_coord(coord)
+    return uvel, vvel, w_speed
 
 
-def annotate(axs, StringFormat, xy):
+def annotate(axs, str_format, xy):
     """annotate
     Description:
         Create cube of WindSpeeds for all ensemble members
     Args:
         axs (fig axes): figure axes
-        StringFormat (str): Regex string
+        str_format (str): Regex string
         xy:
     Return:
         Adds annoation to axs
     """
     # Add initial time, valid time etc.
-    axs.annotate(StringFormat, xy=xy, xycoords='figure fraction',
+    axs.annotate(str_format, xy=xy, xycoords='figure fraction',
                  horizontalalignment='right', verticalalignment='top',
                  color='k', fontsize=15)
 
@@ -150,34 +152,34 @@ def label_fixer(i, ncols, nrows):
     return left_label, bottom_label
 
 
-def plot_wspeed(ax, ws):
+def plot_wspeed(ax_ws, w_speed):
     """plot_wspeed
     Description:
         Plot WindSpeed
     Args:
-        axs (fig axes): figure axes
-        ws (iris cube): windspeed cube
+        ax_ws (fig axes): figure axes
+        w_speed (iris cube): windspeed cube
     Return:
         wspeed (figure): WindSpeed contourf plot
     """
     levels = np.arange(11) * 5
     cmap = mpl_cm.get_cmap('plasma')
-    x = ws.coord('longitude').points
-    y = ws.coord('latitude').points
-    X, Y = np.meshgrid(x, y)
-    wspeed = ax.contourf(X, Y, ws.data, cmap=cmap,
-                         levels=levels, extend='both')
+    x = w_speed.coord('longitude').points
+    y = w_speed.coord('latitude').points
+    x, y = np.meshgrid(x, y)
+    wspeed = ax_ws.contourf(x, y, w_speed.data, cmap=cmap,
+                            levels=levels, extend='both')
     return wspeed
 
 
-def plot_winds(ax, u, v, mod):
+def plot_winds(ax_ws, uvel, vvel, mod):
     """plot_winds
     Description:
         Plot quiver of wind field
     Args:
-        axs (fig axes): figure axes
-        u (iris cube): windspeed cube
-        v (iris cube): windspeed cube
+        ax_ws (fig axes): figure axes
+        uvel (iris cube): windspeed cube
+        vvel (iris cube): windspeed cube
         mod (str): model
     Return:
         wspeed (figure)
@@ -189,91 +191,92 @@ def plot_winds(ax, u, v, mod):
         scale = 400.
         step = 8  # Need to trial and error these.
 
-    x = u.coord('longitude').points
-    y = u.coord('latitude').points
-    X, Y = np.meshgrid(x, y)
+    x = uvel.coord('longitude').points
+    y = uvel.coord('latitude').points
+    x, y = np.meshgrid(x, y)
 
-    arrows = ax.quiver(X[::step, ::step], Y[::step, ::step],
-                       u.data[::step, ::step],
-                       v.data[::step, ::step], angles='xy', scale=scale,
-                       transform=ccrs.PlateCarree())
-    if u.coord('ensemble_member').points[0] == 0:
-        ax.quiverkey(arrows, 0.85, 0.1, 20, '20ms$^{-1}$',
-                     coordinates='figure', fontproperties={'size': 15})
+    arrows = ax_ws.quiver(x[::step, ::step], y[::step, ::step],
+                          uvel.data[::step, ::step],
+                          vvel.data[::step, ::step], angles='xy', scale=scale,
+                          transform=ccrs.PlateCarree())
+    if uvel.coord('ensemble_member').points[0] == 0:
+        ax_ws.quiverkey(arrows, 0.85, 0.1, 20, '20ms$^{-1}$',
+                        coordinates='figure', fontproperties={'size': 15})
 
 
-def map_formatter(ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
+def map_formatter(var_ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
                   top_label=False, bottom_label=True, right_label=False,
                   left_label=True, res='10m'):
     """map_formatter
     Description:
         Adds gridlines, countries and lat/lon labels to the plot.
     Args:
-        axs (fig axes): figure axes
+        var_ax (fig axes): figure axes
         params: preset but adjustable
     Return:
         fig with gridlines added
     """
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                      linewidth=0.75, color='k', linestyle=':')
-    gl.xlabels_top = top_label
-    gl.ylabels_right = right_label
-    gl.ylabels_left = left_label
-    gl.xlabels_bottom = bottom_label
-    gl.xlocator = mticker.MultipleLocator(base=tick_base_x)
-    gl.ylocator = mticker.MultipleLocator(base=tick_base_y)
-    ax.coastlines(resolution=res, color='k', linewidth=1)
-    gl.xlabel_style = {'size': labelsize}
-    gl.ylabel_style = {'size': labelsize}
-    gl.xformatter = LONGITUDE_FORMATTER
-    gl.yformatter = LATITUDE_FORMATTER
+    grl = var_ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                           linewidth=0.75, color='k', linestyle=':')
+    grl.xlabels_top = top_label
+    grl.ylabels_right = right_label
+    grl.ylabels_left = left_label
+    grl.xlabels_bottom = bottom_label
+    grl.xlocator = mticker.MultipleLocator(base=tick_base_x)
+    grl.ylocator = mticker.MultipleLocator(base=tick_base_y)
+    var_ax.coastlines(resolution=res, color='k', linewidth=1)
+    grl.xlabel_style = {'size': labelsize}
+    grl.ylabel_style = {'size': labelsize}
+    grl.xformatter = LONGITUDE_FORMATTER
+    grl.yformatter = LATITUDE_FORMATTER
 
 
-def find_centre_3h(md, TT, em, v_day, v_time, mod, froot, fpat, dom_r):
+def find_centre_3h(info, vinfo, finfo):
     """find_centre_3h
     Description:
-    Loads the track data for a specific time. This function is tailored to johns
-    data, will have to be rewritten depending on how the users track data
+    Loads the track data for a specific time. This function is tailored to
+    johns data, will have to be rewritten depending on how the users track data
     is stored. If you want just a single domain simply create a function that
     returns the centre of this domain.
     Args:
-        md(int): day
-        TT(int): hour
-        em(int): ensemble number
-        v_day(list): list of days
-        v_time (list): list of times
-        mod (str): model
-        froot (str): file path
-        fpat (str): regex filename pattern
-        dom_r (float):
+        info (list): metadata
+            mmdd(int): day
+            time(int): hour
+            em(int): ensemble number
+            mod (str): model
+        vinfo (list):
+            v_day(list): list of days
+            v_time (list): list of times
+        finfo (list): file info
+            dom_r (float):
+            froot (str): file path
+            fpat (str): regex filename pattern
     Return:
         minlat, maxlat, minlon, maxlon: box domain
     """
-    if mod == 'glm':
-        fpatfull = froot + '_newinterp_' + fpat
+    if info[-1] == 'glm':
+        fpatfull = finfo[1] + '_newinterp_' + finfo[2]
     else:
-        fpatfull = froot + fpat
-    filepath = fpatfull.format(md, TT, em, mod)
+        fpatfull = finfo[1] + finfo[2]
+    filepath = fpatfull.format(info)
     track_data = np.load(filepath)
     lats = track_data['lats']
     lons = track_data['lons']
     days = track_data['vt_days']
     times = track_data['vt_times']
-    index1 = np.where(days == v_day)
+    index1 = np.where(days == vinfo[0])
     lats = lats[index1]
     lons = lons[index1]
     times = times[index1]
-    index2 = np.where(times == v_time)
+    index2 = np.where(times == vinfo[1])
     cenlat = lats[index2]
     cenlon = lons[index2]
     try:
-        minlat = cenlat[0] - dom_r
-        maxlat = cenlat[0] + dom_r
-        minlon = cenlon[0] - dom_r
-        maxlon = cenlon[0] + dom_r
+        min_max = [cenlat[0] - finfo[0], cenlat[0] + finfo[0],
+                   cenlon[0] - finfo[0], cenlon[0] + finfo[0]]
     except IndexError:
         return False
-    return minlat, maxlat, minlon, maxlon
+    return min_max
 
 
 def box_constraint(minlat, maxlat, minlon, maxlon):
@@ -340,23 +343,24 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     Return:
         ir (iris cube): Contrained iris cube
     """
-    ir = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
-                                       maxlon, latitude=lambda cell: minlat < cell < maxlat))
-    return ir
+    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
+                                         maxlon, latitude=lambda cell: minlat
+                                         < cell < maxlat))
+    return cube
 
 
-def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
-                     p_constraint):
+def load_ens_members(ens, fpath, x_0, y_0, constraints):
     """load_ens_members
     Description:
     Args:
-        em (int): ensemble number
+        ens (int): ensemble number
         fpath (str): file path
-        x0 (1D array):
-        y0 (1D array):
-        data_constraint1 (iris constraint): u_constraint
-        data_constraint2 (iris constraint): v_constraint
-        p_constraint (iris constraint): pressure constraint
+        x_0 (1D array):
+        y_0 (1D array):
+        contraints (list):
+            u_constraint (iris constraint): u_constraint
+            v_constraint (iris constraint): v_constraint
+            p_constraint (iris constraint): pressure constraint
     Return:
         v_azi_all: tangential azimuth velocity
         u_rad_all: radial azimuth velocity
@@ -365,33 +369,34 @@ def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
     phi_interval = np.pi / 8
     ranges = np.arange(0, 500, 5)
     phis = np.arange(0, 2 * np.pi, phi_interval)
-    df = fpath + '{0:02d}.pp'.format(em)
-    u = iris.load_cube(df, data_constraint1).extract(p_constraint)
-    v = iris.load_cube(df, data_constraint2).extract(p_constraint)
+    d_file = fpath + '{0:02d}.pp'.format(ens)
+    uvel = iris.load_cube(d_file, constraints[0]).extract(constraints[2])
+    vvel = iris.load_cube(d_file, constraints[1]).extract(constraints[2])
 
     i = 0
 
-    for u_slc, v_slc in zip(u.slices(['latitude', 'longitude']), v.slices(['latitude', 'longitude'])):
+    for u_slc, v_slc in zip(uvel.slices(['latitude', 'longitude']),
+                            vvel.slices(['latitude', 'longitude'])):
         if i < 2:
-            minlat = y0[0] - 5
-            maxlat = y0[0] + 5
-            minlon = x0[0] - 5
-            maxlon = x0[0] + 5
+            minlat = y_0[0] - 5
+            maxlat = y_0[0] + 5
+            minlon = x_0[0] - 5
+            maxlon = x_0[0] + 5
         else:
-            minlat = y0[i / 2 - 1] - 5
-            maxlat = y0[i / 2 - 1] + 5
-            minlon = x0[i / 2 - 1] - 5
-            maxlon = x0[i / 2 - 1] + 5
+            minlat = y_0[i / 2 - 1] - 5
+            maxlat = y_0[i / 2 - 1] + 5
+            minlon = x_0[i / 2 - 1] - 5
+            maxlon = x_0[i / 2 - 1] + 5
 
         b_constraint = box_constraint(minlat, maxlat, minlon, maxlon)
         u_box = u_slc.extract(b_constraint)
         v_box = u_slc.extract(b_constraint)
         vrt = calc_vrt_spherical(u_box, v_box)
-        cenlat, cenlon, max_val = max_vals(vrt)
-        for r in ranges:
+        cent_lls = max_vals(vrt)
+        for num in ranges:
             for phi in phis:
-                xpoi = cenlon + 0.009 * r * np.cos(phi)  # Check the 0.009
-                ypoi = cenlat + 0.009 * r * np.sin(phi)
+                xpoi = cent_lls[0] + 0.009 * num * np.cos(phi)
+                ypoi = cent_lls[1] + 0.009 * num * np.sin(phi)
                 new_point = [('latitude', ypoi), ('longitude', xpoi)]
                 newu = u_slc.interpolate(
                     new_point, iris.analysis.Linear()).data
@@ -406,18 +411,18 @@ def load_ens_members(em, fpath, x0, y0, data_constraint1, data_constraint2,
                     vazi = np.append(vazi, aziv)
                     urad = np.append(urad, radu)
 
-            if r == 0:
-                Vazi = np.mean(vazi)
-                Urad = np.mean(urad)
+            if num == 0:
+                v_azi = np.mean(vazi)
+                u_rad = np.mean(urad)
             else:
-                Vazi = np.append(Vazi, np.mean(vazi))
-                Urad = np.append(Urad, np.mean(urad))
+                v_azi = np.append(v_azi, np.mean(vazi))
+                u_rad = np.append(u_rad, np.mean(urad))
         if i == 0:
-            v_azi_all = Vazi
-            u_rad_all = Urad
+            v_azi_all = v_azi
+            u_rad_all = u_rad
         else:
-            v_azi_all = np.dstack((v_azi_all, Vazi))
-            u_rad_all = np.dstack((u_rad_all, Urad))
+            v_azi_all = np.dstack((v_azi_all, v_azi))
+            u_rad_all = np.dstack((u_rad_all, u_rad))
 
         i = i + 1
 
@@ -444,38 +449,38 @@ def max_vals(cube):
     return cenlat, cenlon, maxval
 
 
-def calc_vrt_spherical(u, v):
+def calc_vrt_spherical(uvel, vvel):
     """calc_vrt_spherical
     Description:
         Calculates vorticity in spherical coordinates using the following:
         omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
     Args:
-        u (iris cube):
-        v (iris cube):
+        uvel (iris cube):
+        vvel (iris cube):
     Returns:
         vrt: vorticity
     """
-    lats = u.coord('latitude').points
-    lons = u.coord('longitude').points
-    LONS, LATS = np.meshgrid(lons, lats)
+    lats = uvel.coord('latitude').points
+    lons = uvel.coord('longitude').points
+    lons, lats = np.meshgrid(lons, lats)
 
-    a = 6371000.  # Radius of Earth
+    r_e = 6371000.  # Radius of Earth
     ddeg = abs(lats[1] - lats[0])
     drad = np.pi * ddeg / 180.  # Grid spacing (assumed constant)
 
     # Calculate dv/dlon, i.e. for each latitude
-    for i in np.arange(len(u.data)):
-        dvdlon = calc_grad(v.data[i, :], drad)
+    for i in np.arange(len(uvel.data)):
+        dvdlon = calc_grad(vvel.data[i, :], drad)
         if i == 0:
             v_lon = dvdlon
         else:
             v_lon = np.vstack((v_lon, dvdlon))
 
-    lats_rad = LATS * np.pi / 180.
-    ucoslat = u.data * np.cos(lats_rad)
+    lats_rad = lats * np.pi / 180.
+    ucoslat = uvel.data * np.cos(lats_rad)
 
     # Calculate d(u sin(lat))/dlat, i.e. for each lon
-    for i in np.arange(len(u.data[0])):
+    for i in np.arange(len(uvel.data[0])):
         dudlat = calc_grad(ucoslat[:, i], drad)
         if i == 0:
             u_lat = dudlat
@@ -483,24 +488,25 @@ def calc_vrt_spherical(u, v):
             u_lat = np.vstack((u_lat, dudlat))
     u_lat = np.swapaxes(u_lat, 0, 1)
 
-    vrt = u[:]
-    vrt.data = (1 / (a * np.cos(lats_rad))) * (v_lon - u_lat)
+    vrt = uvel[:]
+    vrt.data = (1 / (r_e * np.cos(lats_rad))) * (v_lon - u_lat)
     vrt.units = 's-1'
     vrt.standard_name = 'atmosphere_relative_vorticity'
     vrt.long_name = 'Calculated using spherical coordinates finite difference'
-    vrt.attributes = {
-        'source': 'Calculated using (u,v) from Met Office Unified Model', 'um_version': '10.6'}
+    vrt.attributes = {'source':
+                      'Calculated using (u,v) from Met Office Unified Model',
+                      'um_version': '10.6'}
     return vrt
 
 
-def plot_hovmoller(v_azi, vrad, outfile, em):
+def plot_hovmoller(v_azi, vrad, outfile, ens):
     """plot_hovmoller
     Description
     Args:
         v_azi: tangential azimuth velocity
         vrad: radial azimuth velocity
         outfile (str):
-        em (str):
+        ens (str):
     Return:
         hovmoller plot
     """
@@ -510,27 +516,27 @@ def plot_hovmoller(v_azi, vrad, outfile, em):
     data = np.swapaxes(data, 0, 1)
     times = np.arange(41)
     fig = plt.figure(1)
-    ax = fig.add_subplot(1, 3, 1)
-    ax.set_xlabel('Radius (km)', fontsize=18)
-    ax.set_ylabel('Forecast time', fontsize=18)
-    hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
+    axs = fig.add_subplot(1, 3, 1)
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time', fontsize=18)
+    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
-    cbar.ax.tick_params(labelsize=14)
-    ax = fig.add_subplot(1, 3, 2)
+    cbar.axs.tick_params(labelsize=14)
+    axs = fig.add_subplot(1, 3, 2)
     data = vrad[0]
     data = np.swapaxes(data, 0, 1)
-    ax.set_xlabel('Radius (km)', fontsize=18)
-    ax.set_ylabel('Forecast time', fontsize=18)
-    hovmol = ax.contourf(ranges, times, data, cmap='viridis', extend='both')
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time', fontsize=18)
+    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
-    cbar.ax.tick_params(labelsize=14)
-    fig.suptitle('Simulation em' + str(em))
-    plt.tightlayout()
+    cbar.axs.tick_params(labelsize=14)
+    fig.suptitle('Simulation em' + str(ens))
+    plt.tight_layout()
     plt.savefig(outfile)
     plt.close()
