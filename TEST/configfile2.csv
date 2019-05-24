@@ -7,7 +7,7 @@ mmdd_hr,{0:04d}_{1:02d}Z,' time and date in mmdd_hrhrZ format (regex)'
 vars,wind_plev/,' variable (folder name)
 data_name,uvplev_4p4_{0:04d}_{1:02d}Z_em,' data per ensemble name (regex)'
 outfile_loc,./plots/,' where to put output (file path unix)'
-outfile_name,wspeed_{0:04d}_{1:02d}_{0:03d}hPa_,' name of file (regex)'
+outfile_name,wspeed_{0:04d}_{1:02d}Z_,' name of file (regex)'
 ens_members,12,' ensemble member (int)'
 plev,850,' pressure level (int)'
 md,1203, 'month day (int)'

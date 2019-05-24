@@ -1,0 +1,14 @@
+IMPORT
+time for import
+--- 3.32771396637 seconds ---
+Class initialisation
+Load Class:
+time for Class initialisation
+--- 3.79085540771e-05 seconds ---
+OLR
+time for single OLR
+--- 9.61075496674 seconds ---
+WindSpeed:
+Loaded configuration settings
+[1203, 12, 0, '4p4']
+info ^^

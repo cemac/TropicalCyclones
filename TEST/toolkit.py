@@ -123,9 +123,14 @@ def annotate(axs, str_format, xy):
         Adds annoation to axs
     """
     # Add initial time, valid time etc.
-    axs.annotate(str_format, xy=xy, xycoords='figure fraction',
-                 horizontalalignment='right', verticalalignment='top',
-                 color='k', fontsize=15)
+    bbox_args = dict(boxstyle="round", fc="0.8")
+    axs.annotate(str_format, xy=xy,
+                 xycoords='figure fraction', xytext=(40, 20),
+                 textcoords='offset points', ha="right", va="top",
+                 bbox=bbox_args)
+    # axs.annotate(str_format, xy=xy, xycoords='figure fraction',
+    #             horizontalalignment='right', verticalalignment='top',
+    #             color='k', fontsize=15)
 
 
 def label_fixer(i, ncols, nrows):
@@ -231,7 +236,7 @@ def map_formatter(var_ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
     grl.yformatter = LATITUDE_FORMATTER
 
 
-def find_centre_3h(info, vinfo, finfo):
+def find_centre_3h(info, finfo):
     """find_centre_3h
     Description:
     Loads the track data for a specific time. This function is tailored to
@@ -244,9 +249,6 @@ def find_centre_3h(info, vinfo, finfo):
             time(int): hour
             em(int): ensemble number
             mod (str): model
-        vinfo (list):
-            v_day(list): list of days
-            v_time (list): list of times
         finfo (list): file info
             dom_r (float):
             froot (str): file path
@@ -258,17 +260,17 @@ def find_centre_3h(info, vinfo, finfo):
         fpatfull = finfo[1] + '_newinterp_' + finfo[2]
     else:
         fpatfull = finfo[1] + finfo[2]
-    filepath = fpatfull.format(info)
+    filepath = fpatfull.format(info[0], info[2], info[3], info[4])
     track_data = np.load(filepath)
     lats = track_data['lats']
     lons = track_data['lons']
     days = track_data['vt_days']
     times = track_data['vt_times']
-    index1 = np.where(days == vinfo[0])
+    index1 = np.where(days == info[1])
     lats = lats[index1]
     lons = lons[index1]
     times = times[index1]
-    index2 = np.where(times == vinfo[1])
+    index2 = np.where(times == info[2])
     cenlat = lats[index2]
     cenlon = lons[index2]
     try:
@@ -462,12 +464,11 @@ def calc_vrt_spherical(uvel, vvel):
     """
     lats = uvel.coord('latitude').points
     lons = uvel.coord('longitude').points
+    ddeg = abs(lats[1] - lats[0])
     lons, lats = np.meshgrid(lons, lats)
 
     r_e = 6371000.  # Radius of Earth
-    ddeg = abs(lats[1] - lats[0])
     drad = np.pi * ddeg / 180.  # Grid spacing (assumed constant)
-
     # Calculate dv/dlon, i.e. for each latitude
     for i in np.arange(len(uvel.data)):
         dvdlon = calc_grad(vvel.data[i, :], drad)
@@ -524,7 +525,7 @@ def plot_hovmoller(v_azi, vrad, outfile, ens):
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
-    cbar.axs.tick_params(labelsize=14)
+    cbar.ax.tick_params(labelsize=14)
     axs = fig.add_subplot(1, 3, 2)
     data = vrad[0]
     data = np.swapaxes(data, 0, 1)
@@ -535,7 +536,7 @@ def plot_hovmoller(v_azi, vrad, outfile, ens):
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
-    cbar.axs.tick_params(labelsize=14)
+    cbar.ax.tick_params(labelsize=14)
     fig.suptitle('Simulation em' + str(ens))
     plt.tight_layout()
     plt.savefig(outfile)

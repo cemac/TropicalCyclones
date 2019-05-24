@@ -63,7 +63,7 @@ class OLR(object):
         imfile = '20170903IRMA.png'
         self.olrhome = '/nfs/a319/ee16wst/OLR/'
         self.imfile = self.olrhome + imfile
-        self.timeselect = 14
+        self.dates = [1203, 2014, 14]
         self.levelsvv = ((np.arange(25)) * 10) + 100
 
     def olrloop(self):
@@ -76,7 +76,7 @@ class OLR(object):
         Returns:
             OLR plot for set time accross ensembles.
         """
-        fig = self.loop_olr(self.timeselect)
+        fig = self.loop_olr(self.dates[-1])
         self.fin_olr_plot(fig)
 
     def plot_olr(self, cubes, fig, i, latlons):
@@ -117,7 +117,7 @@ class OLR(object):
                         xycoords='axes fraction', horizontalalignment='right',
                         verticalalignment='bottom', color='k',
                         backgroundcolor='white', fontsize=12)
-        time = self.timeselect
+        time = self.dates[-1]
         olr_ax.set_extent([latlons[1][time] - 5, latlons[1][time] + 5,
                            latlons[0][time] - 5, latlons[0][time] + 5])
         vvcontour = olr_ax.contourf(x, y, dataarray, levels=self.levelsvv,
@@ -125,7 +125,7 @@ class OLR(object):
                                     extend='both')
         cbar_ax = fig.add_axes([0.92, 0.15, 0.05, 0.7])
         cbar = fig.colorbar(vvcontour, cax=cbar_ax)
-        cbar.olr_ax.set_title(r'$\mathregular{W/m^{2}}$')
+        cbar.ax.set_title(r'$\mathregular{W/m^{2}}$')
         new_cube = cubes[0].regrid(cubes[1], iris.analysis.Linear())
         return new_cube
 
@@ -146,10 +146,12 @@ class OLR(object):
                         horizontalalignment='right',
                         verticalalignment='bottom',
                         color='k', backgroundcolor='white', fontsize=12)
-        plt.text(x=0.5, y=0.96, s="Outgoing long wave radiation",
-                 fontsize=18, ha="center", transform=fig.transFigure)
-        plt.text(x=0.5, y=0.912, s="Valid: 03/09/17 14Z (T+14h)",
-                 fontsize=12, ha="center", transform=fig.transFigure)
+        fig.suptitle('Outgoing long wave radiation', fontsize=18)
+        year, mmdd, time = self.dates
+        string1 = ('Valid: {0}/{1}/{2} (T+{3}) {3:02d}'
+                   ).format(str(mmdd)[-2:], str(mmdd)[:2], year, time)
+        xy1 = [0.95, 0.95]
+        tct.annotate(fig.gca(), string1, xy1)
         plt.savefig('OLR.png')
         plt.close()
 
@@ -222,11 +224,11 @@ class DiagPlotter(object):
         final_day = int(conf_df.final_day[0])
         final_time = int(conf_df.final_time[0])
         self.times = [init_day, init_time, final_day, final_time]
-        v_times = ast.literal_eval(conf_df.v_times[0])
+        v_times = np.array(ast.literal_eval(conf_df.v_times[0]))
         v_days = np.arange(init_day, init_day + 6, 1)
         self.vtimes = [v_times, v_days]
         # dates
-        self.dates = [int(conf_df.year[0]), int(conf_df.mth[0]),
+        self.dates = [int(conf_df.yr[0]), int(conf_df.mth[0]),
                       int(conf_df.md[0]), int(conf_df.TT[0])]
         self.track = [float(conf_df.domain_rad[0]), conf_df.track_data_root[0],
                       conf_df.track_data_metadata[0]]
@@ -296,7 +298,7 @@ class DiagPlotter(object):
         """
         outtest = self.time_const(day, hour)
         year, mth, mmdd, time = self.dates
-        if outtest is None:
+        if outtest is None or outtest is False:
             return
         # Create figure
         outfile, tcon, bcon, ltime = outtest
@@ -375,7 +377,7 @@ class DiagPlotter(object):
                           labelsize=20, tick_base_x=2, tick_base_y=2)
 
         # Annotate to add the ensemble member onto the plot
-        ax_ws.annotate('{0:02d}'.format(fpat_ens[1]), xy=(0.97, 0.03),
+        ax_ws.annotate('Em{0:02d}'.format(fpat_ens[1]), xy=(0.97, 0.03),
                        xycoords='axes fraction',
                        horizontalalignment='right',
                        verticalalignment='bottom', color='k',
@@ -406,12 +408,13 @@ class DiagPlotter(object):
                                                               month=mth,
                                                               day=day,
                                                               hour=hour))
-        out = self.outfile_loc + 'wind/' + self.outfile_name[0] + '.png'
-        outfile = out.format(day, hour)
+        outfile = self.outfile_loc + 'wind/' + self.outfile_name[0]
+        outfile = outfile.format(mmdd, time)
+        outfile = (outfile + self.model + '_' + str(self.plev) +
+                   'hPa_{0:02d}_{1:02d}Z.png').format(day, hour)
         # Fix domain according to position of ensemble member 0,
         # this assumes the position is similar in ensemble members
-        mmll = tct.find_centre_3h([mmdd, time, 0, day, hour, self.model],
-                                  self.v_times, self.track)
+        mmll = tct.find_centre_3h([mmdd, day, hour, 0, self.model], self.track)
         if mmll is False:
             print('Skipping: dd = {0}, hour = {1}'.format(day, hour))
             return mmll
@@ -432,13 +435,13 @@ class DiagPlotter(object):
         fpath = self.data_loc.format(
             mmdd, hour) + self.data_name.format(mmdd, hour)
         outfile = ofile.format(mmdd, hour, ens)
-        filepath = self.track[0] + \
+        filepath = str(self.track[1]) + \
             '_4p4_{0:04d}_{1:02d}Z_en{2:02d}.npz'.format(
                 mmdd, hour, ens)
         track_data = np.load(filepath)
         lats = track_data['lats']
         lons = track_data['lons']
         [y_0, x_0] = [lats, lons]  # centre of storm
-        contraints = self.stash_vars()
+        constraints = self.stash_vars()
         vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0, constraints)
         tct.plot_hovmoller(vtan, vrad, outfile, ens)
