@@ -451,8 +451,9 @@ def max_vals(cube):
     return cenlat, cenlon, maxval
 
 
+"""
 def calc_vrt_spherical(uvel, vvel):
-    """calc_vrt_spherical
+    calc_vrt_spherical
     Description:
         Calculates vorticity in spherical coordinates using the following:
         omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
@@ -461,7 +462,7 @@ def calc_vrt_spherical(uvel, vvel):
         vvel (iris cube):
     Returns:
         vrt: vorticity
-    """
+
     lats = uvel.coord('latitude').points
     lons = uvel.coord('longitude').points
     ddeg = abs(lats[1] - lats[0])
@@ -497,6 +498,56 @@ def calc_vrt_spherical(uvel, vvel):
     vrt.attributes = {'source':
                       'Calculated using (u,v) from Met Office Unified Model',
                       'um_version': '10.6'}
+    return vrt
+"""
+
+
+def calc_vrt_spherical(u, v):
+    """calc_vrt_spherical
+    Description:
+        Calculates vorticity in spherical coordinates using the following:
+        omega = (1/(a cos(lat)))*(dv/dlon - d(u cos(lat))/dlat)
+    Args:
+        u (iris cube):
+        v (iris cube):
+    Returns:
+        vrt: vorticity
+    """
+    lats = u.coord('latitude').points
+    lons = u.coord('longitude').points
+    LONS, LATS = np.meshgrid(lons, lats)
+
+    a = 6371000.  # Radius of Earth
+    ddeg = abs(lats[1] - lats[0])
+    drad = np.pi * ddeg / 180.  # Grid spacing (assumed constant)
+
+    # Calculate dv/dlon, i.e. for each latitude
+    for i in np.arange(len(u.data)):
+        dvdlon = calc_grad(v.data[i, :], drad)
+        if i == 0:
+            v_lon = dvdlon
+        else:
+            v_lon = np.vstack((v_lon, dvdlon))
+
+    lats_rad = LATS * np.pi / 180.
+    ucoslat = u.data * np.cos(lats_rad)
+
+    # Calculate d(u sin(lat))/dlat, i.e. for each lon
+    for i in np.arange(len(u.data[0])):
+        dudlat = calc_grad(ucoslat[:, i], drad)
+        if i == 0:
+            u_lat = dudlat
+        else:
+            u_lat = np.vstack((u_lat, dudlat))
+    u_lat = np.swapaxes(u_lat, 0, 1)
+
+    vrt = u[:]
+    vrt.data = (1 / (a * np.cos(lats_rad))) * (v_lon - u_lat)
+    vrt.units = 's-1'
+    vrt.standard_name = 'atmosphere_relative_vorticity'
+    vrt.long_name = 'Calculated using spherical coordinates finite difference'
+    vrt.attributes = {
+        'source': 'Calculated using (u,v) from Met Office Unified Model', 'um_version': '10.6'}
     return vrt
 
 

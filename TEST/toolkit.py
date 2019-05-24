@@ -345,8 +345,8 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     Return:
         ir (iris cube): Contrained iris cube
     """
-    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
-                                         maxlon, latitude=lambda cell: minlat
+    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
+                                         < maxlon, latitude=lambda cell: minlat
                                          < cell < maxlat))
     return cube
 
@@ -374,7 +374,6 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
     d_file = fpath + '{0:02d}.pp'.format(ens)
     uvel = iris.load_cube(d_file, constraints[0]).extract(constraints[2])
     vvel = iris.load_cube(d_file, constraints[1]).extract(constraints[2])
-
     i = 0
 
     for u_slc, v_slc in zip(uvel.slices(['latitude', 'longitude']),
@@ -397,8 +396,8 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
         cent_lls = max_vals(vrt)
         for num in ranges:
             for phi in phis:
-                xpoi = cent_lls[0] + 0.009 * num * np.cos(phi)
-                ypoi = cent_lls[1] + 0.009 * num * np.sin(phi)
+                xpoi = cent_lls[1] + 0.009 * num * np.cos(phi)
+                ypoi = cent_lls[0] + 0.009 * num * np.sin(phi)
                 new_point = [('latitude', ypoi), ('longitude', xpoi)]
                 newu = u_slc.interpolate(
                     new_point, iris.analysis.Linear()).data
@@ -427,7 +426,6 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
             u_rad_all = np.dstack((u_rad_all, u_rad))
 
         i = i + 1
-
     return v_azi_all, u_rad_all
 
 
@@ -479,7 +477,6 @@ def calc_vrt_spherical(uvel, vvel):
 
     lats_rad = lats * np.pi / 180.
     ucoslat = uvel.data * np.cos(lats_rad)
-
     # Calculate d(u sin(lat))/dlat, i.e. for each lon
     for i in np.arange(len(uvel.data[0])):
         dudlat = calc_grad(ucoslat[:, i], drad)
@@ -500,7 +497,7 @@ def calc_vrt_spherical(uvel, vvel):
     return vrt
 
 
-def plot_hovmoller(v_azi, vrad, outfile, ens):
+def plot_hovmoller(v_azi, vrad, vvert, outfile, ens):
     """plot_hovmoller
     Description
     Args:
@@ -536,6 +533,20 @@ def plot_hovmoller(v_azi, vrad, outfile, ens):
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
+    cbar.ax.tick_params(labelsize=14)
+    axs = fig.add_subplot(1, 3, 3)
+    data = vvert[0]
+    data = np.swapaxes(data, 0, 1)
+    times = np.arange(41)
+    fig = plt.figure(1)
+    axs = fig.add_subplot(1, 3, 1)
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time', fontsize=18)
+    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    # Contour mean tangential wind
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
     cbar.ax.tick_params(labelsize=14)
     fig.suptitle('Simulation em' + str(ens))
     plt.tight_layout()
