@@ -63,7 +63,7 @@ class OLR(object):
         imfile = '20170903IRMA.png'
         self.olrhome = '/nfs/a319/ee16wst/OLR/'
         self.imfile = self.olrhome + imfile
-        self.dates = [1203, 2014, 14]
+        self.dates = ['03', '09', '2017', 14]
         self.levelsvv = ((np.arange(25)) * 10) + 100
 
     def olrloop(self):
@@ -147,12 +147,13 @@ class OLR(object):
                         verticalalignment='bottom',
                         color='k', backgroundcolor='white', fontsize=12)
         fig.suptitle('Outgoing long wave radiation', fontsize=18)
-        year, mmdd, time = self.dates
-        string1 = ('Valid: {0}/{1}/{2} (T+{3}) {3:02d}'
-                   ).format(str(mmdd)[-2:], str(mmdd)[:2], year, time)
+        day, mnth, year, time = self.dates
+        string1 = ('Valid: {0}/{1}/{2} (T+{3}hr)'
+                   ).format(day, mnth, year, str(time))
         xy1 = [0.95, 0.95]
         tct.annotate(fig.gca(), string1, xy1)
-        plt.savefig('OLR.png')
+        plt.savefig(('plots/olr/olr_{1}{2}{3}_{3}Z.png'
+                     ).format(day, mnth, year, str(time)))
         plt.close()
 
     def loop_olr(self, time):

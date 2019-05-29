@@ -12,7 +12,7 @@
 import time
 start_time = time.time()
 import diags
-"""
+
 print('IMPORT')
 print('time for import')
 print("--- %s seconds ---" % (time.time() - start_time))
@@ -29,17 +29,14 @@ print('time for single OLR')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('WindSpeed:')
 start_time = time.time()
-"""
 c = diags.DiagPlotter()
-"""
 day = 4  # try for non skipped
 hour = 12
 c.ws_dayhour(day, hour)
 print('WindSpeed time:')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('Hovs')
-"""
-em = 02
+em = 03
 c.hovplotter(c.dates[-2], c.dates[-3], em)
 print('Hovs time:')
 print("--- %s seconds ---" % (time.time() - start_time))

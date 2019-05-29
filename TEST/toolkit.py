@@ -127,10 +127,7 @@ def annotate(axs, str_format, xy):
     axs.annotate(str_format, xy=xy,
                  xycoords='figure fraction', xytext=(40, 20),
                  textcoords='offset points', ha="right", va="top",
-                 bbox=bbox_args)
-    # axs.annotate(str_format, xy=xy, xycoords='figure fraction',
-    #             horizontalalignment='right', verticalalignment='top',
-    #             color='k', fontsize=15)
+                 bbox=bbox_args, fontsize=16)
 
 
 def label_fixer(i, ncols, nrows):
@@ -550,9 +547,12 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     axs.set_ylabel('Forecast time', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour Vorticity
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both')
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
     cbar.set_label('Vorticity', size=18)
     cbar.ax.tick_params(labelsize=18)
+    cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
+                            fontsize=16, weight='bold')
     fig.suptitle('Simulation em' + str(ens), fontsize=20)
     plt.tight_layout()
     plt.savefig(outfile)
