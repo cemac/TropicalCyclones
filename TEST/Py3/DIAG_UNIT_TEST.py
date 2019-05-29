@@ -37,7 +37,7 @@ print('WindSpeed time:')
 print("--- %s seconds ---" % (time.time() - start_time))
 start_time = time.time()
 print('Hovs:')
-em = 1
+em = 2
 c.hovplotter(c.dates[-2], c.dates[-3], em)
 print('Hovs time:')
 print("--- %s seconds ---" % (time.time() - start_time))

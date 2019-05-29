@@ -443,5 +443,6 @@ class DiagPlotter(object):
         lons = track_data['lons']
         [y_0, x_0] = [lats, lons]  # centre of storm
         constraints = self.stash_vars()
-        vtan, vrad = tct.load_ens_members(ens, fpath, x_0, y_0, constraints)
-        tct.plot_hovmoller(vtan, vrad, outfile, ens)
+        vtan, vrad, vrt = tct.load_ens_members(ens, fpath, x_0, y_0,
+                                               constraints)
+        tct.plot_hovmoller(vtan, vrad, vrt, outfile, ens)

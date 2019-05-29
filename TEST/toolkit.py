@@ -345,8 +345,8 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     Return:
         ir (iris cube): Contrained iris cube
     """
-    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
-                                         < maxlon, latitude=lambda cell: minlat
+    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
+                                         maxlon, latitude=lambda cell: minlat
                                          < cell < maxlat))
     return cube
 
@@ -405,28 +405,35 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
                     new_point, iris.analysis.Linear()).data
                 aziv = -newu * np.sin(phi) + newv * np.cos(phi)
                 radu = newu * np.cos(phi) + newv * np.sin(phi)
+                newvrt = vrt.interpolate(
+                    new_point, iris.analysis.Linear()).data
                 if phi == 0:
                     vazi = aziv
                     urad = radu
+                    vrtazi = newvrt
                 else:
                     vazi = np.append(vazi, aziv)
                     urad = np.append(urad, radu)
-
+                    vertazi = np.append(vrtazi, newvrt)
             if num == 0:
+                vrt_azi = np.mean(vrtazi)
                 v_azi = np.mean(vazi)
                 u_rad = np.mean(urad)
             else:
+                vrt_azi = np.append(vrt_azi, np.mean(vrtazi))
                 v_azi = np.append(v_azi, np.mean(vazi))
                 u_rad = np.append(u_rad, np.mean(urad))
         if i == 0:
             v_azi_all = v_azi
             u_rad_all = u_rad
+            vrt_all = vrt_azi
         else:
             v_azi_all = np.dstack((v_azi_all, v_azi))
             u_rad_all = np.dstack((u_rad_all, u_rad))
+            vrt_all = np.dstack((vrt_all, vrt_azi))
 
         i = i + 1
-    return v_azi_all, u_rad_all
+    return v_azi_all, u_rad_all, vrt_all
 
 
 def max_vals(cube):
@@ -497,7 +504,7 @@ def calc_vrt_spherical(uvel, vvel):
     return vrt
 
 
-def plot_hovmoller(v_azi, vrad, vvert, outfile, ens):
+def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     """plot_hovmoller
     Description
     Args:
@@ -521,8 +528,8 @@ def plot_hovmoller(v_azi, vrad, vvert, outfile, ens):
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
-    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=18)
+    cbar.ax.tick_params(labelsize=18)
     axs = fig.add_subplot(1, 3, 2)
     data = vrad[0]
     data = np.swapaxes(data, 0, 1)
@@ -532,23 +539,21 @@ def plot_hovmoller(v_azi, vrad, vvert, outfile, ens):
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_label('Radial velocity (ms$^{-1}$)', size=14)
-    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Radial velocity (ms$^{-1}$)', size=18)
+    cbar.ax.tick_params(labelsize=18)
     axs = fig.add_subplot(1, 3, 3)
-    data = vvert[0]
+    data = vrt[0]
     data = np.swapaxes(data, 0, 1)
     times = np.arange(41)
     fig = plt.figure(1)
-    axs = fig.add_subplot(1, 3, 1)
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    # Contour mean tangential wind
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                        fraction=0.046, pad=0.09)
-    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=14)
-    cbar.ax.tick_params(labelsize=14)
-    fig.suptitle('Simulation em' + str(ens))
+    # Contour Vorticity
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both')
+    cbar.set_label('Vorticity', size=18)
+    cbar.ax.tick_params(labelsize=18)
+    fig.suptitle('Simulation em' + str(ens), fontsize=20)
     plt.tight_layout()
     plt.savefig(outfile)
     plt.close()
