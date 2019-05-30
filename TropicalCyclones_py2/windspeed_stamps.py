@@ -25,7 +25,6 @@ Memebers:
 """
 from __future__ import print_function
 import ast
-import cPickle as pickle
 import iris
 import iris.analysis.calculus
 import numpy as np
@@ -34,7 +33,7 @@ import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.image as image
+import matplotlib.cm as mpl_cm
 import matplotlib.ticker as mticker
 import toolkit as tct
 mpl.pyplot.switch_backend('Agg')
@@ -116,25 +115,6 @@ def winds(uvel, vvel, ens):
     vvel.add_aux_coord(coord)
     w_speed.add_aux_coord(coord)
     return uvel, vvel, w_speed
-
-
-def annotate(axs, str_format, xy):
-    """annotate
-    Description:
-        Create cube of WindSpeeds for all ensemble members
-    Args:
-        axs (fig axes): figure axes
-        str_format (str): Regex string
-        xy:
-    Return:
-        Adds annoation to axs
-    """
-    # Add initial time, valid time etc.
-    bbox_args = dict(boxstyle="round", fc="0.8")
-    axs.annotate(str_format, xy=xy,
-                 xycoords='figure fraction', xytext=(40, 20),
-                 textcoords='offset points', ha="right", va="top",
-                 bbox=bbox_args, fontsize=16)
 
 
 def label_fixer(i, ncols, nrows):
@@ -285,8 +265,8 @@ def find_centre_3h(info, finfo):
     return min_max
 
 
-class WS_Plotter(object):
-    '''WS_Plotter
+class WindSpeedPlotter(object):
+    '''WindSpeedPlotter
         Initialised extra varible and provides standard plots and
         plotting tools
 
@@ -297,7 +277,8 @@ class WS_Plotter(object):
         time_const: contrain for time and location
     '''
 
-    def __init__(self, configfile='configfile2', stashfile='stashvars'):
+    def __init__(self, configfile='../configfiles/configfile',
+                 stashfile='../configfiles/stashvars'):
         '''
         Args:
             configfile (string): filepath to configuration settings
@@ -456,13 +437,8 @@ class WS_Plotter(object):
         # Add grid lines and ticks etc.
         map_formatter(ax_ws, bottom_label=labels[1], left_label=labels[0],
                       labelsize=20, tick_base_x=2, tick_base_y=2)
-
         # Annotate to add the ensemble member onto the plot
-        annotate('Em{0:02d}'.format(fpat_ens[1]), xy=(0.97, 0.03),
-                 xycoords='axes fraction',
-                 horizontalalignment='right',
-                 verticalalignment='bottom', color='k',
-                 backgroundcolor='white', fontsize=20)
+        tct.annotate(ax_ws, 'Em{0:02d}'.format(fpat_ens[1]), xy=[0.97, 0.03])
         return wspeed_plt
 
     def time_const(self, day, hour):
