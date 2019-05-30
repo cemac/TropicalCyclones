@@ -512,62 +512,77 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     Return:
         hovmoller plot
     """
+    np.save(vazi.npy, v_azi)
+    np.save(vrt.npy, vrt)
+    np.save(vrad.npy, vrad)
+    print(outfile)
+    print(ens)
     plt.rcParams['xtick.labelsize'] = 14
     plt.rcParams['ytick.labelsize'] = 14
     ranges = np.arange(0, 500, 5)
+    times = np.arange(41)
     fig = plt.figure(figsize=(16, 16))
-    data = v_azi[0]
-    data = np.swapaxes(data, 0, 1)
-    times = np.arange(41)
-    fig = plt.figure(1)
-    axs = fig.add_subplot(1, 3, 1)
-    axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time (h)', fontsize=18)
-    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
-                         linewidths=3)
-    # Contour mean tangential wind
-    xy = [0.3, 0.9]
-    annotate(axs, 'a) dAzimuthal velocity (ms$^{-1}$)', xy)
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                        fraction=0.046, pad=0.09)
-    cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=18)
-    cbar.ax.tick_params(labelsize=18)
-    axs = fig.add_subplot(1, 3, 2)
-    data = vrad[0]
-    data = np.swapaxes(data, 0, 1)
-    axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time (h)', fontsize=18)
-    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
-                         linewidths=3)
-    xy = [0.6, 0.9]
-    annotate(axs, 'b) Radial velocity (ms$^{-1}$)', xy)
-    # Contour mean tangential wind
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                        fraction=0.046, pad=0.09)
-    cbar.ax.tick_params(labelsize=18)
-    axs = fig.add_subplot(1, 3, 3)
-    data = vrt[0]
-    data = np.swapaxes(data, 0, 1)
-    times = np.arange(41)
-    fig = plt.figure(1)
-    axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time (h)', fontsize=18)
-    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
-                         linewidths=3)
-    xy = [0.9, 0.9]
-    annotate(axs, 'c) Vorticity', xy)
-    # Contour Vorticity
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                        fraction=0.046, pad=0.09)
-    cbar.set_label('Vorticity', size=18)
-    cbar.ax.tick_params(labelsize=18)
-    cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
-                            fontsize=16, weight='bold')
+    plot_vazi(v_azi[0], fig, ranges, times, 1)
+    plot_vrad(vrad[0], fig, ranges, times, 2)
+    plot_vort(vrt[0], fig, ranges, times, 3)
     fig = plt.gcf()
     plt.tight_layout()
     fig.suptitle('Simulation EM' + str(ens), fontsize=20)
     plt.savefig(outfile)
     plt.close()
+
+
+def plot_vazi(data, fig, ranges, times, i):
+    data = np.swapaxes(data, 0, 1)
+    times = np.arange(41)
+    axs = fig.add_subplot(1, 3, i)
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
+    d_tend = (data[:, 1::] - data[:, 0:-1]) / 2
+    fill = axs.contourf(ranges, times[0:-1], d_tend, cmap='viridis',
+                        extend='both')
+    lines = axs.contour(ranges, times, data, levels[np.arrange(-10, 60, 10)],
+                        colors='grey')
+    zero_v = axs.contour(ranges, times[0:-1], d_tend, levels=[0],
+                         colors='black', linewidths=3)
+    # Contour mean tangential wind
+    xy = [i*0.25, 0.95]
+    annotate(axs, 'a) dAzimuthal velocity (ms$^{-1}$)', xy)
+    cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('Tendency Azimuthal velocity', size=18)
+    cbar.ax.tick_params(labelsize=18)
+
+
+def plot_vrad(data, fig, ranges, times, i):
+    axs = fig.add_subplot(1, 3, i)
+    data = np.swapaxes(data, 0, 1)
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
+    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
+                         linewidths=3)
+    annotate(axs, 'b) Radial velocity (ms$^{-1}$)', [i*0.3, 0.95])
+    # Contour mean tangential wind
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('Tendency Radial velocity', size=18)
+    cbar.ax.tick_params(labelsize=18)
+
+
+def plot_vort(data, fig, ranges, times, i):
+    axs = fig.add_subplot(1, 3, i)
+    data = np.swapaxes(data, 0, 1)
+    axs.set_xlabel('Radius (km)', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
+    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
+                         linewidths=3)
+    annotate(axs, 'c) Vorticity', [i*0.3, 0.95])
+    # Contour Vorticity
+    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+                        fraction=0.046, pad=0.09)
+    cbar.set_label('Tendency Vorticity', size=18)
+    cbar.ax.tick_params(labelsize=18)
+    cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
+                            fontsize=16, weight='bold')
