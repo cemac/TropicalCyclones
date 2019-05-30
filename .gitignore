@@ -1,5 +1,4 @@
 # Files to ignore
-*.png
 .spyproject
 *__pycache__/
 *.pyc
