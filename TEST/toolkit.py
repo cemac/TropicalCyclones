@@ -512,9 +512,9 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     Return:
         hovmoller plot
     """
-    np.save(vazi.npy, v_azi)
-    np.save(vrt.npy, vrt)
-    np.save(vrad.npy, vrad)
+    np.save('vazi.npy', v_azi)
+    np.save('vrt.npy', vrt)
+    np.save('vrad.npy', vrad)
     print(outfile)
     print(ens)
     plt.rcParams['xtick.labelsize'] = 14
