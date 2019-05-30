@@ -10,13 +10,9 @@
 
 University of Leeds Python plotters designed for future inclusion [metoffice RMED (regional model evaluation) toolbox](https://code.metoffice.gov.uk/trac/rmedtoolbox/) as part of the [WCSSP project](https://www.metoffice.gov.uk/research/collaboration/newton/wcssp-se-asia/wp3)
 
-:construction: Under Development :construction:
-
-*NB Badges will not work while Repo is private*
-
 ## Description ##
 
-<hr>
+These python scripts
 
 ## Requirements ##
 
@@ -27,12 +23,13 @@ University of Leeds Python plotters designed for future inclusion [metoffice RME
 
 # Usage #
 
-<hr>
-
-
-## Issue Templates ##
+[*see examples*](examples)
 
 <hr>
+
+## Coming soon ##
+
+Python 3 and examples
 
 ## Acknowledgements ##
 
