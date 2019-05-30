@@ -24,18 +24,17 @@ Memebers:
    https://github.com/cemac/TropicalCyclones
 """
 from __future__ import print_function
-import ast
 import cPickle as pickle
 import iris
 import iris.analysis.calculus
 import numpy as np
-import pandas as pd
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as image
 import matplotlib.ticker as mticker
+import toolkit as tct
 mpl.pyplot.switch_backend('Agg')
 
 
@@ -50,6 +49,7 @@ class OLR(object):
         plot_olr:
         fin_olr_plot:
     '''
+
     def __init__(self):
         """OLR
         """
@@ -143,12 +143,13 @@ class OLR(object):
                         color='k', backgroundcolor='white', fontsize=12)
         fig.suptitle('Outgoing long wave radiation', fontsize=18)
         day, mnth, year, time = self.dates
-        string1 = ('Valid: {0}/{1}/{2} (T+{3}hr)'
-                   ).format(day, mnth, year, str(time))
+        string1 = ('Valid: {0}/{1}/{2} (T+{3}hr)').format(day, mnth, year,
+                                                          str(time))
         xy1 = [0.95, 0.95]
         tct.annotate(fig.gca(), string1, xy1)
-        plt.savefig(('plots/olr/olr_{0}{1}{2}_{3}Z.png'
-                     ).format(day, mnth, year, str(time)))
+        plt.savefig(('plots/olr/olr_{0}{1}{2}_{3}Z.png').format(day, mnth,
+                                                                year,
+                                                                str(time)))
         plt.close()
 
     def loop_olr(self, time):
@@ -179,28 +180,3 @@ class OLR(object):
             cube_i = tct.extracter(cube_i, minlon, maxlon, minlat, maxlat)
             self.plot_olr([cube_i, cube_temp], fig, i + 1, [latt, lonn])
         return fig
-
-    def storm_center(self, mmdd, hour, ens):
-        """storm_center
-        Description:
-            Extracts storm center information from stored track data
-        Args:
-            mmdd (int): month-day MMDD
-            hour (int): hour
-            ens (int): ensemble member
-        Returns:
-            x_0 centre longitude
-            y_0 center latitue
-        """
-        filepath = str(self.track[1]) + \
-            '_4p4_{0:04d}_{1:02d}Z_en{2:02d}.npz'.format(mmdd, hour, ens)
-        try:
-            track_data = np.load(filepath)
-        except ValueError:
-            print('Expected npz format')
-            print('Need storm center info')
-            sys.exit(0)
-        lats = track_data['lats']
-        lons = track_data['lons']
-        [y_0, x_0] = [lats, lons]  # centre of storm
-        return y_0, x_0

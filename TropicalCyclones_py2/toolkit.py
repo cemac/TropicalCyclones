@@ -23,16 +23,7 @@ Memebers:
 .. CEMAC_TropicalCyclones:
    https://github.com/cemac/TropicalCyclones
 """
-from __future__ import print_function
 import iris
-import numpy as np
-import cartopy.crs as ccrs
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import matplotlib as mpl
-import matplotlib.ticker as mticker
-import matplotlib.cm as mpl_cm
-import matplotlib.pyplot as plt  # KEEP ME HERE!!!
-mpl.pyplot.switch_backend('Agg')
 
 
 def annotate(axs, str_format, xy):
