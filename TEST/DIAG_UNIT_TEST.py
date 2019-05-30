@@ -36,7 +36,7 @@ c.ws_dayhour(day, hour)
 print('WindSpeed time:')
 print("--- %s seconds ---" % (time.time() - start_time))
 print('Hovs')
-em = 03
+em = 01
 c.hovplotter(c.dates[-2], c.dates[-3], em)
 print('Hovs time:')
 print("--- %s seconds ---" % (time.time() - start_time))

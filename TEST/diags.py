@@ -96,6 +96,8 @@ class OLR(object):
         Returns:
             fig (matplotlib figure): plot of OLR for set time for all members
         """
+        plt.rcParams['xtick.labelsize'] = 14
+        plt.rcParams['ytick.labelsize'] = 14
         dataarray = np.zeros((750, 1000))
         dataarray = cubes[0].data
         x = cubes[0].coord('longitude').points
@@ -152,7 +154,7 @@ class OLR(object):
                    ).format(day, mnth, year, str(time))
         xy1 = [0.95, 0.95]
         tct.annotate(fig.gca(), string1, xy1)
-        plt.savefig(('plots/olr/olr_{1}{2}{3}_{3}Z.png'
+        plt.savefig(('plots/olr/olr_{0}{1}{2}_{3}Z.png'
                      ).format(day, mnth, year, str(time)))
         plt.close()
 

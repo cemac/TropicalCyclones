@@ -512,6 +512,8 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     Return:
         hovmoller plot
     """
+    plt.rcParams['xtick.labelsize'] = 14
+    plt.rcParams['ytick.labelsize'] = 14
     ranges = np.arange(0, 500, 5)
     fig = plt.figure(figsize=(16, 16))
     data = v_azi[0]
@@ -520,9 +522,11 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     fig = plt.figure(1)
     axs = fig.add_subplot(1, 3, 1)
     axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
     # Contour mean tangential wind
+    xy = [0.9, 0.1]
+    annotate(axs, 'a) dAzimuthal velocity (ms$^{-1}$)', xy)
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('dAzimuthal velocity (ms$^{-1}$)', size=18)
@@ -531,12 +535,12 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     data = vrad[0]
     data = np.swapaxes(data, 0, 1)
     axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    annotate(axs, 'b) Radial velocity (ms$^{-1}$)', xy)
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_label('Radial velocity (ms$^{-1}$)', size=18)
     cbar.ax.tick_params(labelsize=18)
     axs = fig.add_subplot(1, 3, 3)
     data = vrt[0]
@@ -544,8 +548,9 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     times = np.arange(41)
     fig = plt.figure(1)
     axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time', fontsize=18)
+    axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    annotate(axs, 'c) Vorticity', xy)
     # Contour Vorticity
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
@@ -553,7 +558,8 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     cbar.ax.tick_params(labelsize=18)
     cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
                             fontsize=16, weight='bold')
-    fig.suptitle('Simulation em' + str(ens), fontsize=20)
+    fig = plt.gcf()
+    fig.suptitle('Simulation EM' + str(ens), fontsize=20)
     plt.tight_layout()
     plt.savefig(outfile)
     plt.close()
