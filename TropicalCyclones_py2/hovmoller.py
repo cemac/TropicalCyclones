@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""ToolKit
+"""Diags
 
-.. module:: ToolKit
+.. module:: Hovmoller Plotter
     :platform: Unix
-    :synopis: Standalone tools
+    :synopis: Plot Hovmoller of azimuthal velocity
 
-.. moduleauthors: John Ashcroft, CEMAC (UoL) February 2019.
+.. moduleauthor: Sam Hardy(UoL), John Ashcroft (UoL), Helen Burns (CEMAC-UoL)
 
 .. description: This module was developed by CEMAC as part of the WCSSP
-                Project. Intial script improvements
+                Project.
 
    :copyright: © 2019 University of Leeds.
    :license: BSD-2 Clause.
@@ -22,93 +22,27 @@ Memebers:
    https://github.com/cemac/TropicalCyclones
 """
 from __future__ import print_function
+import sys
 import iris
+import iris.analysis.calculus
 import numpy as np
-import cartopy.crs as ccrs
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import pandas as pd
 import matplotlib as mpl
-import matplotlib.ticker as mticker
-import matplotlib.cm as mpl_cm
-import matplotlib.pyplot as plt  # KEEP ME HERE!!!
+import matplotlib.pyplot as plt
 mpl.pyplot.switch_backend('Agg')
 
 
-def checker(day, hour, times):
-    """checker
+def set_ofile():
+    """set_ofile
     Description:
-        Check in correct time critera depending on set start and end time.
-    Args:
-        day(int): day
-        hour(int): hour
-        times (list): list of start and end times
-            day_0(int): init day
-            day_n(int): end day
-            time_0(int): init hour
-            time_n(int): end hour
-    Return:
-        lead_time (int) or lead_time .false.
+        Sets outputfile locationa and name
+    Args: None
+    Returns:
+        ofile (str): path for output
     """
-    day_0, day_n, time_0, time_n = times
-    if day < day_0 or (day == day_0 and hour < time_0 + 1):
-        lead_time = False
-    if day > day_n or (day > day_n - 1 and hour > time_n - 1):
-        lead_time = False
-    lead_time = (day - day_0) * 24 + (hour - time_0)
-    return lead_time
-
-
-def find_subplot_dims(n_ensembles):
-    """find_subplot_dims
-    Description:
-        Automatic format subplots for given number of plots
-    Args:
-        n (int): number of ensemble members
-    Return:
-        n_rows (int): number of rows
-        n_cols (int): number of columns
-    """
-    n_cols = np.ceil(n_ensembles**0.5).astype(int)
-    n_rows = np.ceil(1. * n_ensembles / n_cols).astype(int)
-    return n_rows, n_cols
-
-
-def vel_extract(d_file, u_cons, t_cons, p_cons, b_cons):
-    """uv
-    Description:
-        Extract velocity field under constants
-    Args:
-        d_file (str): file name
-        u_cons (iris constraint): velocity constraint
-        t_cons (iris constraint): temporal constraint (set by time_const)
-        p_cons (iris constraint): pressure constraint
-        b_cons (iris constraint): box constraint (set by box_constraint)
-    Return:
-        u (iris cube): velocity field matching constraints
-    """
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        vel = iris.load_cube(d_file, u_cons).extract(t_cons & p_cons & b_cons)
-    return vel
-
-
-def winds(uvel, vvel, ens):
-    """winds
-    Description:
-        Create cube of WindSpeeds for all ensemble members
-    Args:
-        uvel (iris cube): zonal velocity cube (produced by uv)
-        vvel (iris cube): meridional velocity cube (produced by uv)
-        ens (int): ensemble member number
-    Return:
-        uvel (iris cube): zonal velocity cube with assigned em member
-        vvel (iris cube): meridional velocity cube with assigned em member
-        w_speed (iris cube): windspeed cube with assigned em member
-    """
-    w_speed = (uvel**2 + vvel**2)**0.5
-    coord = iris.coords.AuxCoord(ens, long_name='ensemble_member')
-    uvel.add_aux_coord(coord)
-    vvel.add_aux_coord(coord)
-    w_speed.add_aux_coord(coord)
-    return uvel, vvel, w_speed
+    ofile = ('plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_'
+             + 'em{2:02d}.png')
+    return ofile
 
 
 def annotate(axs, str_format, xy):
@@ -128,154 +62,6 @@ def annotate(axs, str_format, xy):
                  xycoords='figure fraction', xytext=(40, 20),
                  textcoords='offset points', ha="right", va="top",
                  bbox=bbox_args, fontsize=16)
-
-
-def label_fixer(i, ncols, nrows):
-    """label_fixer
-    Description:
-        Create cube of WindSpeeds for all ensemble members
-    Args:
-        i (int): plot number (iterable)
-        ncols (int): number of columns from find_subplot_dims
-        nrows (int): number of rows from find_subplot_dims
-    Return:
-        left_label (str): left labels
-        bottom_label (str): bottom labes
-    """
-    # Make sure only the outside axis are labelled
-    if i % ncols != 0:
-        left_label = False
-    else:
-        left_label = True
-    if i < ncols * (nrows - 1):
-        bottom_label = False
-    else:
-        bottom_label = True
-    return left_label, bottom_label
-
-
-def plot_wspeed(ax_ws, w_speed):
-    """plot_wspeed
-    Description:
-        Plot WindSpeed
-    Args:
-        ax_ws (fig axes): figure axes
-        w_speed (iris cube): windspeed cube
-    Return:
-        wspeed (figure): WindSpeed contourf plot
-    """
-    levels = np.arange(11) * 5
-    cmap = mpl_cm.get_cmap('plasma')
-    x = w_speed.coord('longitude').points
-    y = w_speed.coord('latitude').points
-    x, y = np.meshgrid(x, y)
-    wspeed = ax_ws.contourf(x, y, w_speed.data, cmap=cmap,
-                            levels=levels, extend='both')
-    return wspeed
-
-
-def plot_winds(ax_ws, uvel, vvel, mod):
-    """plot_winds
-    Description:
-        Plot quiver of wind field
-    Args:
-        ax_ws (fig axes): figure axes
-        uvel (iris cube): windspeed cube
-        vvel (iris cube): windspeed cube
-        mod (str): model
-    Return:
-        wspeed (figure)
-    """
-    if mod == '4p4':
-        scale = 300.
-        step = 12
-    else:
-        scale = 400.
-        step = 8  # Need to trial and error these.
-
-    x = uvel.coord('longitude').points
-    y = uvel.coord('latitude').points
-    x, y = np.meshgrid(x, y)
-
-    arrows = ax_ws.quiver(x[::step, ::step], y[::step, ::step],
-                          uvel.data[::step, ::step],
-                          vvel.data[::step, ::step], angles='xy', scale=scale,
-                          transform=ccrs.PlateCarree())
-    if uvel.coord('ensemble_member').points[0] == 0:
-        ax_ws.quiverkey(arrows, 0.85, 0.1, 20, '20ms$^{-1}$',
-                        coordinates='figure', fontproperties={'size': 15})
-
-
-def map_formatter(var_ax, tick_base_x=15.0, tick_base_y=15.0, labelsize=20,
-                  top_label=False, bottom_label=True, right_label=False,
-                  left_label=True, res='10m'):
-    """map_formatter
-    Description:
-        Adds gridlines, countries and lat/lon labels to the plot.
-    Args:
-        var_ax (fig axes): figure axes
-        params: preset but adjustable
-    Return:
-        fig with gridlines added
-    """
-    grl = var_ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                           linewidth=0.75, color='k', linestyle=':')
-    grl.xlabels_top = top_label
-    grl.ylabels_right = right_label
-    grl.ylabels_left = left_label
-    grl.xlabels_bottom = bottom_label
-    grl.xlocator = mticker.MultipleLocator(base=tick_base_x)
-    grl.ylocator = mticker.MultipleLocator(base=tick_base_y)
-    var_ax.coastlines(resolution=res, color='k', linewidth=1)
-    grl.xlabel_style = {'size': labelsize}
-    grl.ylabel_style = {'size': labelsize}
-    grl.xformatter = LONGITUDE_FORMATTER
-    grl.yformatter = LATITUDE_FORMATTER
-
-
-def find_centre_3h(info, finfo):
-    """find_centre_3h
-    Description:
-    Loads the track data for a specific time. This function is tailored to
-    johns data, will have to be rewritten depending on how the users track data
-    is stored. If you want just a single domain simply create a function that
-    returns the centre of this domain.
-    Args:
-        info (list): metadata
-            mmdd(int): day
-            time(int): hour
-            em(int): ensemble number
-            mod (str): model
-        finfo (list): file info
-            dom_r (float):
-            froot (str): file path
-            fpat (str): regex filename pattern
-    Return:
-        minlat, maxlat, minlon, maxlon: box domain
-    """
-    if info[-1] == 'glm':
-        fpatfull = finfo[1] + '_newinterp_' + finfo[2]
-    else:
-        fpatfull = finfo[1] + finfo[2]
-    filepath = fpatfull.format(info[0], info[2], info[3], info[4])
-    track_data = np.load(filepath)
-    lats = track_data['lats']
-    lons = track_data['lons']
-    days = track_data['vt_days']
-    times = track_data['vt_times']
-    index1 = np.where(days == info[1])
-    lats = lats[index1]
-    lons = lons[index1]
-    times = times[index1]
-    index2 = np.where(times == info[2])
-    cenlat = lats[index2]
-    cenlon = lons[index2]
-    try:
-        min_max = [cenlat[0] - finfo[0], cenlat[0] + finfo[0],
-                   cenlon[0] - finfo[0], cenlon[0] + finfo[0]]
-    except IndexError:
-        return False
-    return min_max
 
 
 def box_constraint(minlat, maxlat, minlon, maxlon):
@@ -342,8 +128,8 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     Return:
         ir (iris cube): Contrained iris cube
     """
-    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell <
-                                         maxlon, latitude=lambda cell: minlat
+    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
+                                         < maxlon, latitude=lambda cell: minlat
                                          < cell < maxlat))
     return cube
 
@@ -351,6 +137,9 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
 def calc_azimuth_vels(ens, fpath, x_0, y_0, constraints):
     """calc_azimuth_vels
     Description:
+     Calculate a azimuthal velocitiesfor a give ensemble member, give data
+     location and storm box. Will save the numpy arrays in order to save time
+     in the future.
     Args:
         ens (int): ensemble number
         fpath (str): file path
@@ -411,7 +200,7 @@ def calc_azimuth_vels(ens, fpath, x_0, y_0, constraints):
                 else:
                     vazi = np.append(vazi, aziv)
                     urad = np.append(urad, radu)
-                    vertazi = np.append(vrtcyl, newvrt)
+                    vrtcyl = np.append(vrtcyl, newvrt)
             if num == 0:
                 vrt_cyl = np.mean(vrtcyl)
                 v_azi = np.mean(vazi)
@@ -465,7 +254,7 @@ def calc_vrt_spherical(uvel, vvel):
         uvel (iris cube):
         vvel (iris cube):
     Returns:
-        vrt: vorticity
+        vrt (array): vorticity
     """
     lats = uvel.coord('latitude').points
     lons = uvel.coord('longitude').points
@@ -508,23 +297,23 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     """plot_hovmoller
     Description
     Args:
-        v_azi: tangential azimuth velocity
-        vrad: radial azimuth velocity
-        outfile (str):
-        ens (str):
+        v_azi(T,Y) (array): tangential azimuth velocity
+        vrad(T,Y) (array): radial azimuth velocity
+        vrt(T,Y) (array): Vorticity
+        outfile (str): path and file name for plot
+        ens (str): ensemble member number
     Return:
         hovmoller plot
     """
     plt.rcParams['xtick.labelsize'] = 14
     plt.rcParams['ytick.labelsize'] = 14
-    ranges = np.arange(0, 5*(v_azi[0]).shape[0], 5)
+    ranges = np.arange(0, 5 * (v_azi[0]).shape[0], 5)
     times = np.arange((v_azi[0]).shape[1])
     fig = plt.figure(figsize=(16, 16))
-    plot_vazitan_tend(v_azi[0], v_azi[0], ['dAzimuthal velocity',
-                                           '(ms$^{-1}$)'],
-                      fig, [ranges, times], 1)
-    plot_vazitan_tend(vrad[0], v_azi[0], ['Radial velocity', '(ms$^{-1}$)'],
-                      fig, [ranges, times], 2)
+    plot_vtan_rad(v_azi[0], v_azi[0], ['dAzimuthal velocity', '(ms$^{-1}$)'],
+                  fig, [ranges, times], 1)
+    plot_vtan_rad(vrad[0], v_azi[0], ['Radial velocity', '(ms$^{-1}$)'],
+                  fig, [ranges, times], 2)
     plot_vort(vrt[0], fig, ranges, times, 3)
     fig.suptitle('Simulation EM{0:02d}'.format(ens), fontsize=20)
     plt.tight_layout()
@@ -533,8 +322,28 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     plt.close()
 
 
-def plot_vazitan_tend(data, v_azi, var_units, fig, y_t, i, cmap='PuOr_r',
-                      tend='Y'):
+def plot_vtan_rad(data, v_azi, var_units, fig, y_t, i, cmap='PuOr_r',
+                  tend='Y'):
+    """plot_vtan_rad
+    Description:
+        Plots a subplot i on fig axis fig of data with contours of v_azi in
+        Y-T space defaulting to plotting tendency
+    Args:
+        data(T, Y) (2D array): data to be plotted e.g radial azimuth velocity
+        Vazi(T, Y) (2D array): idealy tangential azimuth velocity
+        var_units (list):
+            var (str): Variable name
+            units (str): units
+        fig (mpl axis): axes to plot to
+        y_t (list): list of dimensions
+            Y (1D array): range (radius (km))
+            T (1D array): time (hours)
+        i (int): suplot number
+        cmap (mpl colourmap): Choose colour map default = PuOr_r
+        tend (str): Plot tendency (Y) or not
+    Return:
+        hovmoller plot
+    """
     fig_letter = ['a) ', 'b) ', 'c) ']
     data = np.swapaxes(data, 0, 1)
     v_azi = np.swapaxes(v_azi, 0, 1)
@@ -548,44 +357,177 @@ def plot_vazitan_tend(data, v_azi, var_units, fig, y_t, i, cmap='PuOr_r',
         d_tend = data[1::]
         clab = ''
     maxi = int(np.array(abs(d_tend.max()), abs(d_tend.min())).max())
-    step = maxi/8.0
+    step = maxi / 8.0
     fill = axs.contourf(y_t[0], y_t[1][1::], d_tend,
-                        levels=np.arange(-maxi, maxi, step) + step/2.0,
+                        levels=np.arange(-maxi, maxi, step) + step / 2.0,
                         cmap=cmap, extend='both')
-    lines = axs.contour(y_t[0], y_t[1][1::], v_azi[1::, :],
-                        levels=[np.arange(int(v_azi.min()), int(v_azi.max()),
-                                10)], colors='black', linewidths=3)
-    zero_v = axs.contour(y_t[0], y_t[1][1::], d_tend, levels=[0],
-                         colors='grey', linewidths=2)
+    axs.contour(y_t[0], y_t[1][1::], v_azi[1::, :],
+                levels=[np.arange(int(v_azi.min()), int(v_azi.max()), 10)],
+                colors='black', linewidths=3)
+    axs.contour(y_t[0], y_t[1][1::], d_tend, levels=[0], colors='grey',
+                linewidths=2)
     # Contour mean tangential wind
     annotate(axs, fig_letter[i] + var_units[0] + ' ' + var_units[1],
-             [i*0.3, 0.85])
+             [i * 0.3, 0.85])
     cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_ticks([np.arange(-maxi, maxi, int(step*2.0))])
+    cbar.set_ticks([np.arange(-maxi, maxi, int(step * 2.0))])
     cbar.set_label(clab + var_units[0], size=18)
     cbar.ax.tick_params(labelsize=18)
 
 
 def plot_vort(data, fig, ranges, times, i, cmap='PuOr_r'):
+    """plot_vtan_rad
+    Description:
+        Plots a subplot vorticity i on fig axis fig of data with contours of
+        v_azi in Y-T space defaulting to plotting tendency
+    Args:
+        data(T, Y) (2D array): data to be plotted e.g radial azimuth velocity
+        fig (mpl axis): axes to plot to
+        y_t (list): list of dimensions
+        ranges (1D array): range (radius (km))
+        times (1D array): time (hours)
+        i (int): suplot number
+        cmap (mpl colourmap): Choose colour map default = PuOr_r
+    Return:
+        hovmoller plot
+    """
     axs = fig.add_subplot(1, 3, i)
     data = np.swapaxes(data, 0, 1)
-    d_tend = 1000*(data[1::, :] - data[0:-1, :]) / 2
+    d_tend = 1000 * (data[1::, :] - data[0:-1, :]) / 2
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
     maxi = int(np.array(abs(d_tend.max()), abs(d_tend.min())).max())
-    step = maxi/8.0
+    step = maxi / 8.0
     fill = axs.contourf(ranges, times[1::], d_tend, cmap=cmap,
-                        levels=np.arange(-maxi, maxi, step) + step/2.0,
+                        levels=np.arange(-maxi, maxi, step) + step / 2.0,
                         extend='both')
-    zero_v = axs.contour(ranges, times[1::], d_tend, levels=[0],
-                         colors='grey', linewidths=2)
-    annotate(axs, 'c) Vorticity', [i*0.3, 0.85])
+    axs.contour(ranges, times[1::], d_tend, levels=[0], colors='grey',
+                linewidths=2)
+    annotate(axs, 'c) Vorticity', [i * 0.3, 0.85])
     # Contour Vorticity
     cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
     cbar.set_label('Tendency Vorticity x $10 ^{-3}$', size=18)
     cbar.ax.tick_params(labelsize=18)
-    cbar.set_ticks([np.arange(-maxi, maxi, step*2.0)])
+    cbar.set_ticks([np.arange(-maxi, maxi, step * 2.0)])
     cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
                             fontsize=16, weight='bold')
+
+
+class HovPlotter(object):
+    '''Hovmoller Plotter
+        Plots Hovmoller using configuration file
+
+    Members:
+        hovloop: loop over ensemble members at give time
+        plot_ens: plot WindSpeed plot for each ensemble member
+        hovplotter: call hovoller plotter for time and memeber
+    '''
+
+    def __init__(self, configfile='../configfiles/configfile.csv',
+                 stashfile='../configfiles/stashvars'):
+        '''
+        Args:
+            configfile (string): filepath to configuration settings
+            stashfile (string): filepath to shashfile codes
+        '''
+        # Read configuration file to import settings
+        conf_df = pd.read_csv(configfile + '.csv')
+        conf_df = conf_df.set_index('var:').transpose()
+        # Define all constraints and locate data.
+        self.data_loc = (conf_df.data_root[0] + '/' + conf_df.Storm[0] + '/' +
+                         conf_df.suitno[0] + '/' + conf_df.run[0] + '/' +
+                         conf_df.mmdd_hr[0] + '/' + conf_df.vars[0])
+        self.data_name = conf_df.data_name[0]
+        self.ens_members = np.arange(int(conf_df.ens_members[0]))
+        self.plev = int(conf_df.plev[0])
+        # dates
+        self.dates = [int(conf_df.yr[0]), int(conf_df.mth[0]),
+                      int(conf_df.md[0]), int(conf_df.TT[0])]
+        self.track = [float(conf_df.domain_rad[0]), conf_df.track_data_root[0],
+                      conf_df.track_data_metadata[0]]
+        print('Loaded configuration settings')
+        # add stash codes
+        self.stashfile = stashfile
+
+    def stash_vars(self):
+        """stash_vars
+        Description:
+            Uses Stash file to create iris cube contraints (variables)
+        Args: none
+        Returns:
+            u_constraint (iris cube constraint): Uvel constraint
+            v_constraint (iris cube constraint): Vvel constraint
+            p_constraint (iris cube constraint): Pressure constraint
+        """
+        stash_df = pd.read_csv(self.stashfile + '.csv')
+        u_stash = stash_df.u_stash[0]
+        v_stash = stash_df.v_stash[0]
+        u_constraint = iris.AttributeConstraint(STASH=u_stash)
+        v_constraint = iris.AttributeConstraint(STASH=v_stash)
+        p_constraint = iris.Constraint(pressure=self.plev)
+        return u_constraint, v_constraint, p_constraint
+
+    def hovloop(self):
+        """hovloop
+        Description:
+            Single plots for each ensemble member of tangential, radial and
+            vertical wind speed. Allows to loop over a number of dates and
+            ensemble members
+        Args:
+            none
+        Returns:
+            Hovmoller plot for a day and time for a set ensemble member
+        """
+        mmdd_time = self.dates
+        mmdd, time = mmdd_time[-2], mmdd_time[-1]
+        for mmdd in [mmdd]:
+            for hour in [time]:
+                for ens in self.ens_members:
+                    self.hovplotter(mmdd, hour, ens)
+
+    def hovplotter(self, mmdd, hour, ens):
+        """hovplotter
+        Description:
+        Args:
+            mmdd (int): month-day MMDD
+            hour (int): hour
+            ens (int): ensemble member
+        Returns:
+            hovmoller plot of ensemble memeber for set time
+        """
+        ofile = set_ofile()
+        fpath = self.data_loc.format(
+            mmdd, hour) + self.data_name.format(mmdd, hour)
+        outfile = ofile.format(mmdd, hour, ens)
+        constraints = self.stash_vars()
+        y_0, x_0 = self.storm_center(mmdd, hour, ens)
+        vtan, vrad, vrt = calc_azimuth_vels(ens, fpath, x_0, y_0,
+                                            constraints)
+        plot_hovmoller(vtan, vrad, vrt, outfile, ens)
+
+    def storm_center(self, mmdd, hour, ens):
+        """storm_center
+        Description:
+            Extracts storm center information from stored track data
+        Args:
+            mmdd (int): month-day MMDD
+            hour (int): hour
+            ens (int): ensemble member
+        Returns:
+            x_0 centre longitude
+            y_0 center latitue
+        """
+        filepath = str(self.track[1]) + \
+            '_4p4_{0:04d}_{1:02d}Z_en{2:02d}.npz'.format(mmdd, hour, ens)
+        try:
+            track_data = np.load(filepath)
+        except ValueError:
+            print('Expected npz format')
+            print('Need storm center info')
+            sys.exit(0)
+        lats = track_data['lats']
+        lons = track_data['lons']
+        [y_0, x_0] = [lats, lons]  # centre of storm
+        return y_0, x_0
