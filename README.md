@@ -29,7 +29,7 @@ These python scripts use configuration files to locate data and create plots or 
 
 ## Coming soon ##
 
-Python 3 and examples
+Python 3 and upgrade in documentation
 
 ## Acknowledgements ##
 
