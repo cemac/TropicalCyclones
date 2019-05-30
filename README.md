@@ -12,7 +12,7 @@ University of Leeds Python plotters designed for future inclusion [metoffice RME
 
 ## Description ##
 
-These python scripts
+These python scripts use configuration files to locate data and create plots or can be fed in variables to calculate diagnostics or to produce plots.
 
 ## Requirements ##
 
