@@ -11,7 +11,7 @@
                 Project.
 
    :copyright: © 2019 University of Leeds.
-   :license: BSD-2 Clause.
+   :license: MIT
 
 Example:
     To use::
@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import toolkit as tct
 mpl.pyplot.switch_backend('Agg')
 
 
@@ -43,49 +44,6 @@ def set_ofile():
     ofile = ('plots/hovs/{0:04d}_{1:02d}Zhovmoller_4p4_{0:04d}_{1:02d}Z_'
              + 'em{2:02d}.png')
     return ofile
-
-
-def annotate(axs, str_format, xy):
-    """annotate
-    Description:
-        Create cube of WindSpeeds for all ensemble members
-    Args:
-        axs (fig axes): figure axes
-        str_format (str): Regex string
-        xy:
-    Return:
-        Adds annoation to axs
-    """
-    # Add initial time, valid time etc.
-    bbox_args = dict(boxstyle="round", fc="0.8")
-    axs.annotate(str_format, xy=xy,
-                 xycoords='figure fraction', xytext=(40, 20),
-                 textcoords='offset points', ha="right", va="top",
-                 bbox=bbox_args, fontsize=16)
-
-
-def box_constraint(minlat, maxlat, minlon, maxlon):
-    """box_constraint
-    Description:
-        Contrain cube using lat lons
-    Args:
-        minlat (int): minium latitue
-        minlon (int): minimum longitude
-        maxlat (int): maximum latitue
-        maxlon (int): maximum longitude
-    Return:
-        tc_box_constraint (iris Constraints)
-    """
-    # Create constraint to extract data from cube over a certain region
-    longitude_constraint1 = iris.Constraint(
-        longitude=lambda cell: cell > minlon)
-    longitude_constraint2 = iris.Constraint(
-        longitude=lambda cell: cell < maxlon)
-    latitude_constraint1 = iris.Constraint(latitude=lambda cell: cell > minlat)
-    latitude_constraint2 = iris.Constraint(latitude=lambda cell: cell < maxlat)
-    tc_box_constraint = (longitude_constraint1 & longitude_constraint2 &
-                         latitude_constraint1 & latitude_constraint2)
-    return tc_box_constraint
 
 
 def calculate_pot_temp(pressure, temperature):
@@ -114,24 +72,6 @@ def calc_grad(data, dx):
     grad[-1] = (1 / dx) * (data[-1] - data[-2])
     grad[1:-1] = (1 / (2 * dx)) * (data[2:] - data[:-2])
     return grad
-
-
-def extracter(fload, minlon, maxlon, minlat, maxlat):
-    """extracter
-    Description:
-    Args:
-        fload (iris cube): loaded file
-        minlon (int): minimum longitude
-        maxlon (int): maximum longitude
-        minlat (int): minimum latitude
-        maxlat (int): maximum latitude
-    Return:
-        ir (iris cube): Contrained iris cube
-    """
-    cube = fload.extract(iris.Constraint(longitude=lambda cell: minlon < cell
-                                         < maxlon, latitude=lambda cell: minlat
-                                         < cell < maxlat))
-    return cube
 
 
 def calc_azimuth_vels(ens, fpath, x_0, y_0, constraints):
@@ -175,7 +115,7 @@ def calc_azimuth_vels(ens, fpath, x_0, y_0, constraints):
             minlon = x_0[i / 2 - 1] - 5
             maxlon = x_0[i / 2 - 1] + 5
 
-        b_constraint = box_constraint(minlat, maxlat, minlon, maxlon)
+        b_constraint = tct.box_constraint(minlat, maxlat, minlon, maxlon)
         u_box = u_slc.extract(b_constraint)
         v_box = u_slc.extract(b_constraint)
         vrt = calc_vrt_spherical(u_box, v_box)
@@ -367,7 +307,7 @@ def plot_vtan_rad(data, v_azi, var_units, fig, y_t, i, cmap='PuOr_r',
     axs.contour(y_t[0], y_t[1][1::], d_tend, levels=[0], colors='grey',
                 linewidths=2)
     # Contour mean tangential wind
-    annotate(axs, fig_letter[i] + var_units[0] + ' ' + var_units[1],
+    tct.annotate(axs, fig_letter[i] + var_units[0] + ' ' + var_units[1],
              [i * 0.3, 0.85])
     cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
@@ -404,7 +344,7 @@ def plot_vort(data, fig, ranges, times, i, cmap='PuOr_r'):
                         extend='both')
     axs.contour(ranges, times[1::], d_tend, levels=[0], colors='grey',
                 linewidths=2)
-    annotate(axs, 'c) Vorticity', [i * 0.3, 0.85])
+    tct.annotate(axs, 'c) Vorticity', [i * 0.3, 0.85])
     # Contour Vorticity
     cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
