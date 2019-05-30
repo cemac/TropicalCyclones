@@ -5,7 +5,7 @@
     :platform: Unix
     :synopis: Standalone tools
 
-.. moduleauthor: John Ashcroft, CEMAC (UoL) February 2019.
+.. moduleauthors: John Ashcroft, CEMAC (UoL) February 2019.
 
 .. description: This module was developed by CEMAC as part of the WCSSP
                 Project. Intial script improvements
@@ -26,11 +26,11 @@ import iris
 import numpy as np
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import matplotlib
+import matplotlib as mpl
 import matplotlib.ticker as mticker
 import matplotlib.cm as mpl_cm
 import matplotlib.pyplot as plt  # KEEP ME HERE!!!
-matplotlib.pyplot.switch_backend('Agg')
+mpl.pyplot.switch_backend('Agg')
 
 
 def checker(day, hour, times):
@@ -348,8 +348,8 @@ def extracter(fload, minlon, maxlon, minlat, maxlat):
     return cube
 
 
-def load_ens_members(ens, fpath, x_0, y_0, constraints):
-    """load_ens_members
+def calc_azimuth_vels(ens, fpath, x_0, y_0, constraints):
+    """calc_azimuth_vels
     Description:
     Args:
         ens (int): ensemble number
@@ -363,7 +363,7 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
     Return:
         v_azi_all: tangential azimuth velocity
         u_rad_all: radial azimuth velocity
-        vert: vertical velocity
+        vort: vorticty
     """
     phi_interval = np.pi / 8
     ranges = np.arange(0, 500, 5)
@@ -407,29 +407,32 @@ def load_ens_members(ens, fpath, x_0, y_0, constraints):
                 if phi == 0:
                     vazi = aziv
                     urad = radu
-                    vrtazi = newvrt
+                    vrtcyl = newvrt
                 else:
                     vazi = np.append(vazi, aziv)
                     urad = np.append(urad, radu)
-                    vertazi = np.append(vrtazi, newvrt)
+                    vertazi = np.append(vrtcyl, newvrt)
             if num == 0:
-                vrt_azi = np.mean(vrtazi)
+                vrt_cyl = np.mean(vrtcyl)
                 v_azi = np.mean(vazi)
                 u_rad = np.mean(urad)
             else:
-                vrt_azi = np.append(vrt_azi, np.mean(vrtazi))
+                vrt_cyl = np.append(vrt_cyl, np.mean(vrtcyl))
                 v_azi = np.append(v_azi, np.mean(vazi))
                 u_rad = np.append(u_rad, np.mean(urad))
         if i == 0:
             v_azi_all = v_azi
             u_rad_all = u_rad
-            vrt_all = vrt_azi
+            vrt_all = vrt_cyl
         else:
             v_azi_all = np.dstack((v_azi_all, v_azi))
             u_rad_all = np.dstack((u_rad_all, u_rad))
-            vrt_all = np.dstack((vrt_all, vrt_azi))
+            vrt_all = np.dstack((vrt_all, vrt_cyl))
 
         i = i + 1
+    np.save('v_azi_EM{0:02d}.npy'.format(ens), v_azi_all)
+    np.save('u_rad_EM{0:02d}.npy'.format(ens), u_rad_all)
+    np.save('vrt_all_EM{0:02d}.npy'.format(ens), vrt_all)
     return v_azi_all, u_rad_all, vrt_all
 
 
@@ -512,77 +515,77 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     Return:
         hovmoller plot
     """
-    np.save('vazi.npy', v_azi)
-    np.save('vrt.npy', vrt)
-    np.save('vrad.npy', vrad)
-    print(outfile)
-    print(ens)
     plt.rcParams['xtick.labelsize'] = 14
     plt.rcParams['ytick.labelsize'] = 14
     ranges = np.arange(0, 500, 5)
     times = np.arange(41)
     fig = plt.figure(figsize=(16, 16))
-    plot_vazi(v_azi[0], fig, ranges, times, 1)
-    plot_vrad(vrad[0], fig, ranges, times, 2)
+    plot_vazitan_tend(v_azi[0], v_azi[0], ['dAzimuthal velocity',
+                                           '(ms$^{-1}$)'],
+                      fig, [ranges, times], 1)
+    plot_vazitan_tend(vrad[0], v_azi[0], ['Radial velocity', '(ms$^{-1}$)'],
+                      fig, [ranges, times], 2)
     plot_vort(vrt[0], fig, ranges, times, 3)
-    fig = plt.gcf()
+    fig.suptitle('Simulation EM{0:02d}'.format(ens), fontsize=20)
     plt.tight_layout()
-    fig.suptitle('Simulation EM' + str(ens), fontsize=20)
+    fig.subplots_adjust(top=0.9)
     plt.savefig(outfile)
     plt.close()
 
 
-def plot_vazi(data, fig, ranges, times, i):
+def plot_vazitan_tend(data, v_azi, var_units, fig, y_t, i, cmap='PuOr_r',
+                      tend='Y'):
+    fig_letter = ['a) ', 'b) ', 'c) ']
     data = np.swapaxes(data, 0, 1)
-    times = np.arange(41)
+    v_azi = np.swapaxes(v_azi, 0, 1)
     axs = fig.add_subplot(1, 3, i)
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
-    d_tend = (data[:, 1::] - data[:, 0:-1]) / 2
-    fill = axs.contourf(ranges, times[0:-1], d_tend, cmap='viridis',
-                        extend='both')
-    lines = axs.contour(ranges, times, data, levels[np.arrange(-10, 60, 10)],
-                        colors='grey')
-    zero_v = axs.contour(ranges, times[0:-1], d_tend, levels=[0],
-                         colors='black', linewidths=3)
+    if tend == 'Y':
+        d_tend = (data[1::, :] - data[0:-1, :]) / 2
+        clab = 'Tendency '
+    else:
+        d_tend = data[1::]
+        clab = ''
+    maxi = int(np.array(abs(d_tend.max()), abs(d_tend.min())).max())
+    step = maxi/8.0
+    fill = axs.contourf(y_t[0], y_t[1][1::], d_tend,
+                        levels=np.arange(-maxi, maxi, step) + step/2.0,
+                        cmap=cmap, extend='both')
+    lines = axs.contour(y_t[0], y_t[1][1::], v_azi[1::, :],
+                        levels=[np.arange(int(v_azi.min()), int(v_azi.max()),
+                                10)], colors='black', linewidths=3)
+    zero_v = axs.contour(y_t[0], y_t[1][1::], d_tend, levels=[0],
+                         colors='grey', linewidths=2)
     # Contour mean tangential wind
-    xy = [i*0.25, 0.95]
-    annotate(axs, 'a) dAzimuthal velocity (ms$^{-1}$)', xy)
+    annotate(axs, fig_letter[i] + var_units[0] + ' ' + var_units[1],
+             [i*0.3, 0.85])
     cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_label('Tendency Azimuthal velocity', size=18)
+    cbar.set_ticks([np.arange(-maxi, maxi, int(step*2.0))])
+    cbar.set_label(clab + var_units[0], size=18)
     cbar.ax.tick_params(labelsize=18)
 
 
-def plot_vrad(data, fig, ranges, times, i):
+def plot_vort(data, fig, ranges, times, i, cmap='PuOr_r'):
     axs = fig.add_subplot(1, 3, i)
     data = np.swapaxes(data, 0, 1)
+    d_tend = 1000*(data[1::, :] - data[0:-1, :]) / 2
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
-    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
-                         linewidths=3)
-    annotate(axs, 'b) Radial velocity (ms$^{-1}$)', [i*0.3, 0.95])
-    # Contour mean tangential wind
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
-                        fraction=0.046, pad=0.09)
-    cbar.set_label('Tendency Radial velocity', size=18)
-    cbar.ax.tick_params(labelsize=18)
-
-
-def plot_vort(data, fig, ranges, times, i):
-    axs = fig.add_subplot(1, 3, i)
-    data = np.swapaxes(data, 0, 1)
-    axs.set_xlabel('Radius (km)', fontsize=18)
-    axs.set_ylabel('Forecast time (h)', fontsize=18)
-    hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
-    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
-                         linewidths=3)
-    annotate(axs, 'c) Vorticity', [i*0.3, 0.95])
+    maxi = int(np.array(abs(d_tend.max()), abs(d_tend.min())).max())
+    step = maxi/8.0
+    fill = axs.contourf(ranges, times[1::], d_tend, cmap=cmap,
+                        levels=np.arange(-maxi, maxi, step) + step/2.0,
+                        extend='both')
+    zero_v = axs.contour(ranges, times[1::], d_tend, levels=[0],
+                         colors='grey', linewidths=2)
+    annotate(axs, 'c) Vorticity', [i*0.3, 0.85])
     # Contour Vorticity
-    cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
+    cbar = plt.colorbar(fill, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
-    cbar.set_label('Tendency Vorticity', size=18)
+    cbar.set_label('Tendency Vorticity x $10 ^{-3}$', size=18)
     cbar.ax.tick_params(labelsize=18)
+    cbar.set_ticks([np.arange(-maxi, maxi, step*2.0)])
     cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
                             fontsize=16, weight='bold')
