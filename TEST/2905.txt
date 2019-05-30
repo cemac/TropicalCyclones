@@ -1,0 +1,17 @@
+IMPORT
+time for import
+--- 7.83960700035 seconds ---
+Class initialisation
+Load Class:
+time for Class initialisation
+--- 6.69956207275e-05 seconds ---
+OLR
+time for single OLR
+--- 12.4205842018 seconds ---
+WindSpeed:
+Loaded configuration settings
+WindSpeed time:
+--- 191.86981082 seconds ---
+Hovs
+Hovs time:
+--- 1374.14041591 seconds ---

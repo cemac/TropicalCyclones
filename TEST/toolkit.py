@@ -524,8 +524,10 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
+                         linewidths=3)
     # Contour mean tangential wind
-    xy = [0.9, 0.1]
+    xy = [0.3, 0.9]
     annotate(axs, 'a) dAzimuthal velocity (ms$^{-1}$)', xy)
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
                         fraction=0.046, pad=0.09)
@@ -537,6 +539,9 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
+                         linewidths=3)
+    xy = [0.6, 0.9]
     annotate(axs, 'b) Radial velocity (ms$^{-1}$)', xy)
     # Contour mean tangential wind
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
@@ -550,6 +555,9 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     axs.set_xlabel('Radius (km)', fontsize=18)
     axs.set_ylabel('Forecast time (h)', fontsize=18)
     hovmol = axs.contourf(ranges, times, data, cmap='viridis', extend='both')
+    zero_v = axs.contour(ranges, times, data, levels=[0], colors='black',
+                         linewidths=3)
+    xy = [0.9, 0.9]
     annotate(axs, 'c) Vorticity', xy)
     # Contour Vorticity
     cbar = plt.colorbar(hovmol, orientation='horizontal', extend='both',
@@ -559,7 +567,7 @@ def plot_hovmoller(v_azi, vrad, vrt, outfile, ens):
     cbar.ax.set_yticklabels(np.arange(int(data.min()), int(data.max()), 0.002),
                             fontsize=16, weight='bold')
     fig = plt.gcf()
-    fig.suptitle('Simulation EM' + str(ens), fontsize=20)
     plt.tight_layout()
+    fig.suptitle('Simulation EM' + str(ens), fontsize=20)
     plt.savefig(outfile)
     plt.close()
