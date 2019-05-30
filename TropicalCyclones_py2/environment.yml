@@ -1,4 +1,4 @@
-name: rmed_toolbox_env
+name: TC_py2
 channels:
   - conda-forge
   - defaults
