@@ -7,6 +7,8 @@
 # Tropical Cyclones
 
 ![GitHub release](https://img.shields.io/github/release/cemac/TropicalCyclones.svg) ![GitHub](https://img.shields.io/github/license/cemac/TropicalCyclones.svg) [![GitHub top language](https://img.shields.io/github/languages/top/cemac/TropicalCyclones.svg)](https://github.com/cemac/TropicalCyclones) [![GitHub issues](https://img.shields.io/github/issues/cemac/TropicalCyclones.svg)](https://github.com/cemac/TropicalCyclones/issues) [![GitHub last commit](https://img.shields.io/github/last-commit/cemac/TropicalCyclones.svg)](https://github.com/cemac/TropicalCyclones/commits/master) [![GitHub All Releases](https://img.shields.io/github/downloads/cemac/TropicalCyclones/total.svg)](https://github.com/cemac/TropicalCyclones/releases)
+[![DOI](https://zenodo.org/badge/169087475.svg)](https://zenodo.org/badge/latestdoi/169087475)
+[![HitCount](http://hits.dwyl.io/{cemac}/{TropicalCyclones}.svg)](http://hits.dwyl.io/{cemac}/{TropicalCyclones})
 
 University of Leeds Python plotters designed for future inclusion [metoffice RMED (regional model evaluation) toolbox](https://code.metoffice.gov.uk/trac/rmedtoolbox/) as part of the [WCSSP project](https://www.metoffice.gov.uk/research/collaboration/newton/wcssp-se-asia/wp3)
 
